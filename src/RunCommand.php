@@ -63,7 +63,7 @@ class RunCommand extends Command
         $filters = $this->config['filters'];
         $filtered = filter($cards, $filters);
 
-        error_log(sprintf("Converted %d vcard(s)", count($filtered)));
+        error_log(sprintf("Converted %d vCard(s)", count($filtered)));
 
         // fritzbox format
         $phonebook = $this->config['phonebook'];
@@ -78,6 +78,6 @@ class RunCommand extends Command
         $fritzbox = $this->config['fritzbox'];
         upload($xmlStr, $fritzbox['url'], $fritzbox['user'], $fritzbox['password'], $phonebook['id']);
 
-        error_log("Uploaded fritz phonebook");
+        error_log("Uploaded Fritz!Box phonebook");
     }
 }
