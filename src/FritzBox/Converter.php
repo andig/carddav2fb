@@ -62,7 +62,9 @@ class Converter
         if (isset($this->card->phone)) {
             foreach ($this->card->phone as $numberType => $numbers) {
                 foreach ($numbers as $idx => $number) {
-                    if (count($replaceCharacters)) {
+                    if (count($replaceCharacters))
+                    {
+                        $number = str_replace("\xc2\xa0", "\x20", $number);
                         $number = strtr($number, $replaceCharacters);
                         $number = trim(preg_replace('/\s+/', ' ', $number));
                     }
