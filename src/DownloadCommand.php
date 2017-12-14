@@ -41,7 +41,7 @@ class DownloadCommand extends Command
         }
         else {
             // download
-            error_log("Downloading vcards");
+            error_log("Downloading vCard(s)");
 
             $progress->start();
             $vcards = download($backend, function () use ($progress) {
@@ -49,7 +49,7 @@ class DownloadCommand extends Command
             });
             $progress->finish();
 
-            error_log(sprintf("\nDownloaded %d vcard(s)", count($vcards)));
+            error_log(sprintf("\nDownloaded %d vCard(s)", count($vcards)));
 
             if ($file = $input->getOption('raw')) {
                 $json = json_encode($vcards, self::JSON_OPTIONS);
@@ -58,7 +58,7 @@ class DownloadCommand extends Command
         }
 
         // parsing
-        error_log("Parsing vcards");
+        error_log("Parsing vCard(s)");
 
         $cards = parse($vcards);
         $json = json_encode($cards, self::JSON_OPTIONS);
