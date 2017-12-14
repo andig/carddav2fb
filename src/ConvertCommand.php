@@ -40,7 +40,7 @@ class ConvertCommand extends Command
             file_put_contents($json, json_encode($filtered, self::JSON_OPTIONS));
         }
 
-        error_log(sprintf("Converted %d cards", count($filtered)));
+        error_log(sprintf("Converted %d vCard(s)", count($filtered)));
 
         // convert
         $phonebook = $this->config['phonebook'];
