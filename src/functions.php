@@ -6,6 +6,8 @@ use Andig\CardDav\Backend;
 use Andig\Vcard\Parser;
 use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
+use Andig\FritzAdr\converter2fa;
+use Andig\FritzAdr\fritzadr;
 use \SimpleXMLElement;
 
 function backendProvider(array $config): Backend
@@ -91,22 +93,47 @@ function parse(array $cards): array
     return $vcards;
 }
 
+/**
+ * Filter included/excluded vcards
+ *
+ * @param array $cards
+ * @param array $filters
+ * @return array
+ */
 function filter(array $cards, array $filters): array
 {
-    $result = [];
+    // include selected
+    $includeFilter = $filters['include'] ?? [];
+    if (count($includeFilter)) {
+        $step1 = [];
 
-    foreach ($cards as $card) {
-        if (filtersMatch($card, $filters)) {
-            continue;
+        foreach ($cards as $card) {
+            if (filtersMatch($card, $includeFilter)) {
+                $step1[] = $card;
+            }
         }
-
-        $result[] = $card;
+    }
+    else {
+        // include all by default
+        $step1 = $cards;
     }
 
-    return $result;
+    $excludeFilter = $filters['exclude'] ?? [];
+    if (!count($excludeFilter)) {
+        return $step1;
+    }
+
+    $step2 = [];
+    foreach ($step1 as $card) {
+        if (!filtersMatch($card, $excludeFilter)) {
+            $step2[] = $card;
+        }
+    }
+
+    return $step2;
 }
 
-function filtersMatch(object $card, array $filters): bool
+function filtersMatch($card, array $filters): bool
 {
     foreach ($filters as $attribute => $values) {
         if (isset($card->$attribute)) {
@@ -126,8 +153,18 @@ function filterMatches($attribute, $filterValues): bool
     }
 
     foreach ($filterValues as $filter) {
-        if ($attribute === $filter) {
-            return true;
+        if (is_array($attribute)) {
+            // check if any attribute matches
+            foreach ($attribute as $childAttribute) {
+                if ($childAttribute === $filter) {
+                    return true;
+                }
+            }
+        } else {
+            // check if simple attribute matches
+            if ($attribute === $filter) {
+                return true;
+            }
         }
     }
 
@@ -135,7 +172,7 @@ function filterMatches($attribute, $filterValues): bool
 }
 
 function export(string $name, array $cards, array $conversions): SimpleXMLElement
-{
+	{
     $xml = new SimpleXMLElement(
         <<<EOT
 <?xml version="1.0" encoding="UTF-8"?>
@@ -158,6 +195,41 @@ EOT
 
     return $xml;
 }
+
+function exportFA(array $cards, array $conversions,string $dblocation) {
+    
+	$converter2fa = new converter2fa($conversions);
+    $DB3 = new fritzadr;											// Instanz von fritzadr erzeugen												// Achtung -> in config mit aufnehmen!
+	$FritzAdrRecord = array ();
+	
+	IF ($DB3->CreateFritzAdr($dblocation)) {						// Versuche die dBase-Datei zu erzeugen
+		$converter2fa->NumDataFields = $DB3->NumAttributes;			// Anzahl der Datenfelder übergeben
+		$DB3->OpenFritzAdr();										// wenn erfolgreich dann öffne die dBase-Datei
+		foreach ($cards as $card) {	
+			$converter2fa->convertfa($card);						// extrahiere FAX-Daten in den public array der class
+		}
+		IF (count ($converter2fa->FritzAdrRecords)) {				// wenn der public array der class gefüllt ist
+
+			foreach ($converter2fa->FritzAdrRecords as $key => $row) {	// Sortierung Aufsteigend nach Name und Nummer
+				$BEZCHN[$key]  = $row[0];
+				IF ($DB3->NumAttributes == 19) {
+					$TELEFAX[$key] = $row[11];
+				}
+				IF ($DB3->NumAttributes == 21) {
+					$TELEFAX[$key] = $row[10];
+				}
+			}
+			array_multisort($BEZCHN, SORT_ASC, $TELEFAX, SORT_ASC, $converter2fa->FritzAdrRecords);
+
+			foreach ($converter2fa->FritzAdrRecords as $FritzAdrRecord) {	// zerlege ihn in der FritzAdr array
+				$DB3->AddRecordFritzAdr($FritzAdrRecord);			// und schreibe ihn als Datensatz in die dBase-Datei
+			}
+		}
+		$DB3->CloseFritzAdr();										// schließe die dBase-Datei
+		return $converter2fa->FritzAdrRecords;						// mgl. Ausgabe für command convert
+	}   
+}
+
 
 // https://stackoverflow.com/questions/4778865/php-simplexml-addchild-with-another-simplexmlelement
 function xml_adopt(SimpleXMLElement $to, SimpleXMLElement $from)

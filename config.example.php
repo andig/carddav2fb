@@ -6,7 +6,7 @@ $config = [
 		'id' => 0,
 		'name' => 'Telefonbuch'
 	],
-	
+
 	// or server
 	'server' => [
 		'url' => 'https://...',
@@ -21,14 +21,20 @@ $config = [
 		'password' => '',
 	],
 
-	'excludes' => [
-		'category' => [
-			'ORGA', 'b'
-		],
-		'group' => [
-			'c', 'd'
-		],
-	],
+    'filters' => [
+        'include' => [
+            // if empty include all by default
+        ],
+
+        'exclude' => [
+            'category' => [
+                'a', 'b'
+            ],
+            'group' => [
+                'c', 'd'
+            ],
+        ],
+    ],
 
 	'conversions' => [
 		'vip' => [
@@ -45,19 +51,20 @@ $config = [
 			'{organization}'
 		],
 		'phoneTypes' => [
-			'WORK' => 'work', 
-			'HOME' => 'home', 
+			'WORK' => 'work',
+			'HOME' => 'home',
 			'CELL' => 'mobile'
 		],
 		'emailTypes' => [
-			'WORK' => 'work', 
+			'WORK' => 'work',
 			'HOME' => 'home'
 		],
 		'phoneReplaceCharacters' => [
-			'(' => '',
-			')' => '',
-			'/' => '',
-			'-' => ' '
+			'+49' => '',  //Router steht default in DE; '0049' könnte auch Teil einer Rufnummer sein
+            '('   => '',
+			')'   => '',
+			'/'   => '',
+			'-'   => ' '
 		]
 	]
 ];
