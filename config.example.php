@@ -7,12 +7,19 @@ $config = [
 		'name' => 'Telefonbuch'
 	],
 
-	// or server
+    // or server
 	'server' => [
-		'url' => 'https://...',
-		'user' => '',
-		'password' => '',
-	],
+		0 => [
+			'url' => 'https://...',
+			'user' => '',
+			'password' => '',
+			],
+		1 => [
+			'url' => 'https://...',
+			'user' => '',
+			'password' => '',
+			],
+		],
 
 	// or fritzbox
 	'fritzbox' => [
