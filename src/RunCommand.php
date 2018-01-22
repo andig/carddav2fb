@@ -28,21 +28,21 @@ class RunCommand extends Command
         $this->loadConfig($input);
 
         $vcards = array();
-		$xcards = array();
-		
-		foreach($this->config['server'] as $server) {
-			$progress = new ProgressBar($output);
-			error_log("Downloading vCard(s) from account ".$server['user']);
-			$backend = backendProvider($server);
-		    $progress->start();
-			$xcards = download($backend, function () use ($progress) {
-						$progress->advance();
-					}
-				);
-			$progress->finish();
-			$vcards = array_merge($vcards,$xcards);
-			error_log(sprintf("\nDownloaded %d vCard(s)", count($vcards)));
-	 	}
+        $xcards = array();
+
+        foreach($this->config['server'] as $server) {
+            $progress = new ProgressBar($output);
+            error_log("Downloading vCard(s) from account ".$server['user']);
+            $backend = backendProvider($server);
+            $progress->start();
+            $xcards = download($backend, function () use ($progress) {
+                $progress->advance();
+                    }
+                );
+            $progress->finish();
+            $vcards = array_merge($vcards,$xcards);
+            error_log(sprintf("\nDownloaded %d vCard(s)", count($vcards)));
+        }
 
         // parse and convert
         error_log("Parsing vcards");
