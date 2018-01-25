@@ -47,8 +47,7 @@ class DownloadCommand extends Command
                 $progress->start();
                 $xcards = download ($backend, function () use ($progress) {
                     $progress->advance();
-                }
-                    );
+                });
                 $progress->finish();
                 $vcards = array_merge($vcards, $xcards);
                 error_log(sprintf("\nDownloaded %d vCard(s)", count($vcards)));
