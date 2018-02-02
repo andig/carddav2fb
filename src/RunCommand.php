@@ -76,8 +76,7 @@ class RunCommand extends Command
 
         $xmlStr = $xml->asXML();
 
-        $fritzbox = $this->config['fritzbox'];
-        upload($xmlStr, $fritzbox['url'], $fritzbox['user'], $fritzbox['password'], $phonebook['id']);
+        upload($xmlStr, $this->config);
 
         error_log("Uploaded fritz phonebook");
     }
