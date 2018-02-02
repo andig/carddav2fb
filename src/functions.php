@@ -297,12 +297,14 @@ function xml_adopt(SimpleXMLElement $to, SimpleXMLElement $from)
  * @param int $phonebook
  * @return void
  */
-function upload(string $xml, string $url, string $user, string $password, int $phonebook=0)
+function upload(string $xml, $config)
 {
-    $fritz = new Api($url, $user, $password, 1);
-
+    $fritzbox = $config['fritzbox'];
+    
+    $fritz = new Api($fritzbox['url'], $fritzbox['user'], $fritzbox['password'], 1);
+    
     $formfields = array(
-        'PhonebookId' => $phonebook
+        'PhonebookId' => $config['phonebook']['id']
     );
 
     $filefields = array(
