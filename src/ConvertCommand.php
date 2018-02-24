@@ -18,7 +18,7 @@ class ConvertCommand extends Command
     protected function configure()
     {
         $this->setName('convert')
-            ->setDescription('Convert Vcard to FritzBox format')
+            ->setDescription('Convert vCard(s) to Fritz!Box format')
             ->addOption('raw', 'r', InputOption::VALUE_REQUIRED, 'export raw conversion result to json file')
             ->addArgument('filename', InputArgument::REQUIRED, 'filename');
 
@@ -40,12 +40,19 @@ class ConvertCommand extends Command
             file_put_contents($json, json_encode($filtered, self::JSON_OPTIONS));
         }
 
-        error_log(sprintf("Converted %d cards", count($filtered)));
+        error_log(sprintf("Converted %d vCards", count($filtered)));
 
         // convert
         $phonebook = $this->config['phonebook'];
         $conversions = $this->config['conversions'];
         $xml = export($phonebook['name'], $filtered, $conversions);
+
+		// FRITZadr dBase Ausgabe
+		$FritzAdrPath = $this->config['fritzadrpath'][0];
+		IF (!empty($FritzAdrPath)) {
+			$FAData = exportfa($filtered, $conversions, $FritzAdrPath);
+			Echo $FAData;
+		}	
 
         echo $xml->asXML();
     }

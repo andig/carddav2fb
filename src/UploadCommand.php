@@ -16,7 +16,7 @@ class UploadCommand extends Command
     protected function configure()
     {
         $this->setName('upload')
-            ->setDescription('Upload to Fritz!Box')
+            ->setDescription('Upload vCard(s) to Fritz!Box')
             ->addArgument('filename', InputArgument::REQUIRED, 'filename');
 
         $this->addConfig();
@@ -28,12 +28,12 @@ class UploadCommand extends Command
 
         $filename = $input->getArgument('filename');
         $xml = file_get_contents($filename);
+        
+        // check for newer contacts in phonebook
+        checkupdates ($xml, $this->config);
 
-        $fritzbox = $this->config['fritzbox'];
-        $phonebook = $this->config['phonebook'];
-
-        upload($xml, $fritzbox['url'], $fritzbox['user'], $fritzbox['password'], $phonebook['id'] ?? 0);
-
-        error_log("Uploaded Fritz!Box phonebook");
+        IF (upload($xml, $this->config)) {
+            error_log("Uploaded Fritz!Box phonebook");
+        }
     }
 }
