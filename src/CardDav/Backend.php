@@ -103,7 +103,7 @@ class Backend
     public function getVcards($include_vcards = true)
     {
         $response = $this->query($this->url, 'PROPFIND');
-
+        
         if (in_array($response->getStatusCode(), [200,207])) {
             $body = (string)$response->getBody();
             return $this->simplify($body, $include_vcards);
@@ -111,7 +111,29 @@ class Backend
 
         throw new \Exception('Received HTTP ' . $response->getStatusCode());
     }
+    
+    
+    /*
+    Delivers the UNIX timestamp of last modification
+    */
+    public function getModDate ()
+    {            
+        $response = $this->query($this->url, 'PROPFIND');
+        
+        if (in_array($response->getStatusCode(), [200,207])) {
+            
+            $body = new \SimpleXMLElement((string)$response->getBody());
+            
+            foreach ($body->response->propstat->prop as $prop) {
+                IF ($prop->resourcetype->collection) {
+                    return strtotime($prop->getlastmodified);
+                }
+            }
+        }
+        throw new \Exception('Received HTTP ' . $response->getStatusCode());
+    }
 
+    
     public function fetchImage($uri)
     {
         $this->client = $this->client ?? new Client();

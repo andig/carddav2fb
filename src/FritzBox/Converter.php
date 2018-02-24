@@ -7,6 +7,7 @@ use \SimpleXMLElement;
 
 class Converter
 {
+    
     private $config;
 
     public function __construct($config)
@@ -16,6 +17,7 @@ class Converter
 
     public function convert($card): SimpleXMLElement
     {
+        
         $this->card = $card;
 
         // $contact = $xml->addChild('contact');
@@ -27,15 +29,15 @@ class Converter
         $name = htmlspecialchars($this->getProperty('realName'));
         $person->addChild('realName', $name);
         // $person->addChild('ImageURL');
-
+        
         $this->addPhone();
         $this->addEmail();
-
+        
         $person = $this->contact->addChild('setup');
 
         // print_r($this->contact);
         // echo($this->contact->asXML().PHP_EOL);
-
+    
         return $this->contact;
     }
 
@@ -51,9 +53,9 @@ class Converter
     private function addPhone()
     {
         // <telephony>
-        // 	<number type="work" vanity="" prio="1" id="0">+490358179022</number>
-        // 	<number type="work" vanity="" prio="0" id="1">+400746653254</number></telephony>
-
+        //     <number type="work" vanity="" prio="1" id="0">+490358179022</number>
+        //     <number type="work" vanity="" prio="0" id="1">+400746653254</number></telephony>
+        
         $telephony = $this->contact->addChild('telephony');
 
         $replaceCharacters = $this->config['phoneReplaceCharacters'] ?? array();
@@ -63,13 +65,14 @@ class Converter
             foreach ($this->card->phone as $numberType => $numbers) {
                 foreach ($numbers as $idx => $number) {
                     if (count($replaceCharacters)) {
+                        //VP: Umwandlung HTML char in Leerzeichen (better trim)
+                        $number = str_replace("\xc2\xa0", "\x20", $number);
+                        // end of extension
                         $number = strtr($number, $replaceCharacters);
-                        $number = trim(preg_replace('/\s+/', ' ', $number));
+                        $number = trim(preg_replace('/\s+/','', $number));
                     }
-
                     $phone = $telephony->addChild('number', $number);
                     $phone->addAttribute('id', $idx);
-
                     $type = 'other';
 
                     foreach ($phoneTypes as $type => $value) {
@@ -78,28 +81,26 @@ class Converter
                             if (strpos($numberType, 'FAX') !== false) {
                                 $type = 'fax_' . $type;
                             }
-
                             break;
                         }
                     }
-
-                    $phone->addAttribute('type', $type);
-
-                    if (strpos($numberType, 'pref') !== false) {
-                        $phone->addAttribute('prio', 1);
-                    }
-
-                    // $phone->addAttribute('vanity', '');
                 }
+                    
+                $phone->addAttribute('type', $type);
+
+                if (strpos($numberType, 'pref') !== false) {
+                    $phone->addAttribute('prio', 1);
+                    }
+                    // $phone->addAttribute('vanity', '');
             }
         }
     }
-
+    
     private function addEmail()
     {
         // <services>
-        // 	<email classifier="work" id="0">KTS.Michaelis.Hannover@evlka.de</email>
-        // 	<email classifier="work" id="1">Kindertagesstaette@michaelis-hannover.de</email></
+        //     <email classifier="work" id="0">KTS.Michaelis.Hannover@evlka.de</email>
+        //     <email classifier="work" id="1">Kindertagesstaette@michaelis-hannover.de</email></
 
         $services = $this->contact->addChild('services');
         $emailTypes = $this->config['emailTypes'] ?? array();
@@ -125,6 +126,7 @@ class Converter
 
     private function getProperty(string $property): string
     {
+        
         if (null === ($rules = $this->config[$property] ?? null)) {
             throw new \Exception("Missing conversion definition for `$property`");
         }
@@ -147,7 +149,8 @@ class Converter
                 if (isset($this->card->$token) && $this->card->$token) {
                     // echo $tokens[0][$idx].PHP_EOL;
                     $replacements[$token] = $this->card->$token;
-                    // echo $this->card->$token;
+                    // echo $this->card->$token.PHP_EOL;
+                    // ECHO PHP_EOL;
                 }
             }
 

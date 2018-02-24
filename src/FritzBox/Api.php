@@ -23,7 +23,7 @@ class Api
      *
      * @access public
      */
-    public function __construct($url = 'https://fritz.box', $user_name = false, $password = false, $force_local_login = false)
+    public function __construct($url = 'https://fritz.box', $user_name = false, $password = false) //, $force_local_login = false)
     {
         // init the config object
         // $this->config = new Config();
@@ -34,36 +34,9 @@ class Api
         $this->password = $password;
 
         $this->sid = $this->initSID();
+        
     }
 
-    /**
-     * do a POST request on the box
-     * the main cURL wrapper handles the command
-     *
-     * @param  array  $formfields    an associative array with the POST fields to pass
-     * @return string                the raw HTML code returned by the Fritz!Box
-     */
-    public function doPostForm($formfields = array())
-    {
-        $ch = curl_init();
-
-        if (isset($formfields['getpage']) && strpos($formfields['getpage'], '.lua') > 0) {
-            curl_setopt($ch, CURLOPT_URL, $this->url . $formfields['getpage'] . '?sid=' . $this->sid);
-            unset($formfields['getpage']);
-        } else {
-            // add the sid, if it is already set
-            if ($this->sid != '0000000000000000') {
-                $formfields['sid'] = $this->sid;
-            }
-            curl_setopt($ch, CURLOPT_URL, $this->url . '/cgi-bin/webcm');
-        }
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($formfields));
-        $output = curl_exec($ch);
-        curl_close($ch);
-        return $output;
-    }
 
     public function doPostFile($formfields = array(), $filefileds = array())
     {

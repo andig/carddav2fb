@@ -20,9 +20,9 @@ class DownloadCommand extends Command
     {
         $this->setName('download')
             ->setDescription('Load from CardDAV server')
-            ->addArgument('filename', InputArgument::OPTIONAL, 'raw vcards json file')
+            ->addArgument('filename', InputArgument::OPTIONAL, 'raw vCard(s) json file')
             ->addOption('image', 'i', InputOption::VALUE_NONE, 'download images')
-            ->addOption('raw', 'r', InputOption::VALUE_REQUIRED, 'export raw vcards to json file');
+            ->addOption('raw', 'r', InputOption::VALUE_REQUIRED, 'export raw vCard(s) to json file');
 
         $this->addConfig();
     }
@@ -31,25 +31,27 @@ class DownloadCommand extends Command
     {
         $this->loadConfig($input);
 
-        $server = $this->config['server'];
-        $backend = backendProvider($server);
-        $progress = new ProgressBar($output);
-
+        $vcards = array();
+        $xcards = array();
+        
         if ($inputFile = $input->getArgument('filename')) {
             // read from file
             $vcards = json_decode(file_get_contents($inputFile));
         }
         else {
             // download
-            error_log("Downloading vcards");
-
-            $progress->start();
-            $vcards = download($backend, function () use ($progress) {
-                $progress->advance();
-            });
-            $progress->finish();
-
-            error_log(sprintf("\nDownloaded %d vcard(s)", count($vcards)));
+            foreach ($this->config['server'] as $server) {
+                $progress = new ProgressBar($output);
+                error_log("Downloading vCard(s) from account ".$server['user']);
+                $backend = backendProvider($server);
+                $progress->start();
+                $xcards = download($backend, function () use ($progress) {
+                            $progress->advance();
+                });
+                $progress->finish();
+                $vcards = array_merge($vcards, $xcards);
+                error_log(sprintf("\nDownloaded %d vCard(s)", count($vcards)));
+            }
 
             if ($file = $input->getOption('raw')) {
                 $json = json_encode($vcards, self::JSON_OPTIONS);
@@ -58,7 +60,7 @@ class DownloadCommand extends Command
         }
 
         // parsing
-        error_log("Parsing vcards");
+        error_log("Parsing vCard(s)");
 
         $cards = parse($vcards);
         $json = json_encode($cards, self::JSON_OPTIONS);
