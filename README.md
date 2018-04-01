@@ -4,7 +4,7 @@ This is an entirely simplified version of https://github.com/jens-maus/carddav2f
 
 ## Requirements
 
-  * PHP 7.0 (`apt-get install php7.0 php7.0-curl php7.0-mbstring php7.0-soap php7.0-xml`)
+  * PHP 7.0 (`apt-get install php7.0 php7.0-curl php7.0-gd php7.0-mbstring php7.0-soap php7.0-xml`)
   * Composer (follow the installation guide at https://getcomposer.org/download/)
 
 ## Installation

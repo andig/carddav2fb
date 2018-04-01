@@ -176,7 +176,7 @@ class Parser implements \IteratorAggregate
                         break;
                     case 'NICKNAME':
                         $cardData->nickname = $value;
-                        break;
+                        break;    
                     case 'BDAY':
                         $cardData->birthday = $this->parseBirthday($value);
                         break;
@@ -223,6 +223,7 @@ class Parser implements \IteratorAggregate
                     case 'PHOTO':
                         if ($rawValue) {
                             $cardData->rawPhoto = $value;
+                            $cardData->photoData = implode(';',$types);
                         } else {
                             $cardData->photo = $value;
                         }
@@ -272,7 +273,7 @@ class Parser implements \IteratorAggregate
             'firstname' => $firstname,
             'additional' => $additional,
             'prefix' => $prefix,
-            'suffix' => $suffix
+            'suffix' => $suffix,
         ];
     }
 

@@ -1,64 +1,71 @@
 <?php
 
 $config = [
-    'phonebook' => [
-        'id'           => 0,
-        'name'         => 'Telefonbuch',
-		'forcedupload' => 2,                   // 3 = CardDAV contacts overwrite phonebook on Fritz!Box
-    ],                                         // 2 = like 3, but newer entries will send as VCF via eMail (-> reply)
-                                               // 1 = like 2, but vCards are only downloaded if they are newer than the phonebook
-	
+    
+    'script' => [
+        'cache' => '/media/[YOURUSBSTICK]/carddav2fb/cache',        // your stick, drive or share designated for caching 
+                                                                    // at you Raspberry, on your NAS or ...
+    ], 
+
     'server' => [
         [
-            'url'      => 'https://...',
-            'user'     => '',
-            'password' => '',
-            ],                                 /* define as many as you need
+            'url'      => 'https://..',
+            'user'     => '[ACCOUNT]',
+            'password' => '[PASSWORD]',
+            ],                                                      /* define as many as you need   
         [
-            'url'      => '',
+            'url'      => 'https://..',
             'user'     => '',
             'password' => '',
-            ],                                 */
+            ],                                                      */
     ],
 
-	'fritzbox' => [
+    'fritzbox' => [
         'url'      => 'fritz.box',
-        'user'     => 'dslf-config',
-        'password' => '',
+        'user'     => '[USER]',                                     // e.g. 'dslf-config' AVM standard user for usual login
+        'password' => '[PASSWORD]',
+        'fonpix'   => '/[YOURUSBSTICK]/FRITZ/fonpix',               // the additional usb memory at the Fritz!Box
     ],
 
-    'reply' => [
-	    'url'      => 'smtp...',
-		'port'     => 587,                     // alternativ 465
-		'secure'   => 'tls',                   // alternativ 'ssl'
-        'user'     => '',                      // your sender
-        'password' => '',
-		'receiver' => '',
-		'debug'    => 2,                       // 0 = off (for production use)
-	],	                                       // 1 = client messages
-	    									   // 2 = client and server messages
+    'phonebook' => [
+        'id'           => 0,               // only '0' can store quick dial and vanity numbers as well as images 
+        'name'         => 'Telefonbuch',
+        'imagepath'    => 'file:///var/InternerSpeicher/[YOURUSBSTICK]/FRITZ/fonpix/', // mandatory if you use the -i option
+    ],
 
     'filters' => [
-        'include' => [                         // if empty include all by default
+        'include' => [                                              /* if empty include all by default
+            'categories' => [                                          if your server is iCloud, groups can be used (XOR)
+            ],
+            'group' => [
+            ],                                                      */
         ],
 
         'exclude' => [
             'categories' => [
-			    'A',
-				'B',
-				'C',
-            ],
-		    'groups'     => [
-			],
+                'A',
+                'B',
+                'C',
+            ],                                                      /*
+            'group' => [                                               if your server is iCloud, groups can be used (XOR)
+                'D',
+                'E',
+                'F',
+            ],                                                      */
         ],
-    ],
 
     'conversions' => [
+        
+        'substitutes' => [                                          // you must not change this! 
+            'PHOTO',                                                // Otherwise image upload failed!
+        ],        
+        
         'vip' => [
-            'categories' => ['VIP'
+            'categories' => ['VIP'                                  // the category / categories, which should be marked as VIP
             ],
         ],
-        'realName' => [
+        
+        'realName' => [                                             // are processed consecutively. Order decides!
             '{lastname}, {prefix} {nickname}',
             '{lastname}, {prefix} {firstname}',
             '{lastname}, {nickname}',
@@ -66,23 +73,23 @@ $config = [
             '{organization}',
             '{fullname}'
         ],
-		
-        'phoneTypes' => [
-            'WORK'    => 'work',
+
+        'phoneTypes' => [                                           // you mustn´t define 'fax'!
+            'WORK'    => 'work',                                    // this conversion is set fix in code!
             'HOME'    => 'home',
             'CELL'    => 'mobile',
             'MAIN'    => 'work',
+            'FAX'     => 'fax',
             'default' => 'work',
-            'other'   => 'work'
         ],
-		
+
         'emailTypes' => [
             'WORK' => 'work',
             'HOME' => 'home'
         ],
-		
-        'phoneReplaceCharacters' => [  // are processed consecutively. Order decides!
-            '+491'  => '01',           // domestic numbers without country code 
+        
+        'phoneReplaceCharacters' => [                               // are processed consecutively. Order decides!
+            '+491'  => '01',                                        // domestic numbers without country code
             '+492'  => '02',
             '+493'  => '03',
             '+494'  => '04',
@@ -101,11 +108,11 @@ $config = [
             '+49 8' => '08',
             '+49 9' => '09',
             '+49'   => '',
-            '('     => '',             // delete separator
+            '('     => '',                                          // delete separators
             ')'     => '',
             '/'     => '',
             '-'     => '',
-            '+'     => '00'            // normalize foreign numbers
+            '+'     => '00'                                         // normalize foreign numbers
         ]
     ]
 ];
