@@ -2,18 +2,14 @@
 
 namespace Andig;
 
+
 use Andig\CardDav\Backend;
 use Andig\Vcard\Parser;
-use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
+use Andig\FritzBox\Converter;
 use \SimpleXMLElement;
 
-/**
- * Initialize backend from configuration
- *
- * @param array $config
- * @return Backend
- */
+
 function backendProvider(array $config): Backend
 {
     $server = $config['server'] ?? $config;
@@ -25,67 +21,97 @@ function backendProvider(array $config): Backend
     return $backend;
 }
 
-/**
- * Download vcards from CardDAV server
- *
- * @param Backend $backend
- * @param callable $callback
- * @return array
- */
-function download(Backend $backend, callable $callback=null): array
+
+function download(Backend $backend, $substitutes, callable $callback=null): array
 {
     $backend->setProgress($callback);
+    $backend->setSubstitutes ($substitutes);
     return $backend->getVcards();
 }
 
-/**
- * Download images from CardDAV server
- *
- * @param array $cards
- * @return int
- */
-function downloadImages(Backend $backend, array $cards, callable $callback=null): array
-{
-    foreach ($cards as $card) {
-        if (isset($card->photo)) {
-            $uri = $card->photo;
-            $image = $backend->fetchImage($uri);
-            $card->photo_data = utf8_encode($image);
 
-            if (is_callable($callback)) {
-                $callback();
+function getImageCachePath ($cachePath = '') {
+    
+    $imageCache = $cachePath . '/fonpix';                              // ../[cache]/fonpix
+    
+    if (!file_exists($imageCache)) {
+        IF (!mkdir($imageCache)) {
+            $cwd = getcwd() ?? '';                                     // /carddav2fb/fonpix OR /fonpix
+            $imageCache = $cwd.'/fonpix';
+        }
+    }
+    return $imageCache; 
+}
+
+
+function regularizeSuffixes ($fileList) {
+    
+    $needles = ['JPG' , 'JPEG', 'jpeg'];                               // just in case user changed suffix in cache manual
+    $lowerSuffix = str_replace ($needles, 'jpg', $fileList);
+    return $lowerSuffix;
+}
+
+
+function storeImages(array $vcards, $cachePath = '')
+{
+    $imageCache = getImageCachePath ($cachePath);
+    $new_files = [];
+        
+    $cachedFiles = array_diff(scandir($imageCache), array('.', '..'));
+    $cachedFiles = regularizeSuffixes($cachedFiles);
+            
+    foreach ($vcards as $vcard) {
+        if (isset($vcard->rawPhoto)) {                                 // skip all other vCards
+            if (!in_array($vcard->uid . '.jpg', $cachedFiles)) {       // this UID has recently no file in cache
+                if ($vcard->photoData == 'JPEG') {                     // Fritz!Box only accept jpg-files
+                    $imgFile = imagecreatefromstring ($vcard->rawPhoto);
+                    if ($imgFile !== false) {
+                        $fullPath = $imageCache . '/' . $vcard->uid . '.jpg';
+                        header('Content-Type: image/jpeg');
+                        imagejpeg($imgFile, $fullPath);
+                        $new_files[] = $fullPath;
+                        imagedestroy($imgFile);
+                    }
+                }
             }
         }
     }
-
-    return $cards;
+    return $new_files;
 }
 
-/**
- * Count downloaded images contained in list of vcards
- *
- * @param array $cards
- * @return int
- */
-function countImages(array $cards): int
+
+function uploadImages ($new_files, $config)
 {
-    $images = 0;
-
-    foreach ($cards as $card) {
-        if (isset($card->photo_data)) {
-            $images++;
-        }
+    $conn_id = ftp_connect($config['url']);
+    $result = ftp_login($conn_id, $config['user'], $config['password']);
+    $i = 0;
+    
+    if ((!$conn_id) || (!$result)) {
+        return;
     }
-
-    return $images;
+    ELSE {
+        ftp_chdir($conn_id, $config['fonpix']);
+        $fonpix_files = ftp_nlist($conn_id, '.');
+        $fonpix_files = regularizeSuffixes ($fonpix_files);
+        IF (!is_array($fonpix_files)) {
+            $fonpix_files = [];
+        }
+        foreach ($new_files as $new_file) {
+            $cachedFile = basename($new_file);
+            IF (!in_array($cachedFile, $fonpix_files)) {                   // there is already a jpg saved for this UID 
+                $local = $new_file;                                    // file from cache
+                $remote = $config['fonpix']. '/'. $cachedFile;
+                If (ftp_put($conn_id, $remote, $local, FTP_BINARY) != false) {
+                    $i++;
+                }
+            }
+        }
+        ftp_close($conn_id);
+    }
+    return $i;
 }
 
-/**
- * Parse an array of raw vcards into POPOs
- *
- * @param array $cards
- * @return array
- */
+
 function parse(array $cards): array
 {
     $vcards = [];
@@ -133,8 +159,7 @@ function filter(array $cards, array $filters): array
 {
     // include selected
     $includeFilter = $filters['include'] ?? [];
-
-    if (countFilters($includeFilter)) {
+    if (count($includeFilter)) {
         $step1 = [];
 
         foreach ($cards as $card) {
@@ -144,11 +169,6 @@ function filter(array $cards, array $filters): array
         }
     }
     else {
-        // filter defined but empty sub-rules?
-        if (count($includeFilter)) {
-            error_log('Include filter empty- including all cards');
-        }
-
         // include all by default
         $step1 = $cards;
     }
@@ -168,32 +188,6 @@ function filter(array $cards, array $filters): array
     return $step2;
 }
 
-/**
- * Count populated filter rules
- *
- * @param array $filters
- * @return int
- */
-function countFilters(array $filters): int
-{
-    $filterCount = 0;
-
-    foreach ($filters as $key => $value) {
-        if (is_array($value)) {
-            $filterCount += count($value);
-        }
-    }
-
-    return $filterCount;
-}
-
-/**
- * Check a list of filters against a card
- *
- * @param [type] $card
- * @param array $filters
- * @return bool
- */
 function filtersMatch($card, array $filters): bool
 {
     foreach ($filters as $attribute => $values) {
@@ -207,13 +201,6 @@ function filtersMatch($card, array $filters): bool
     return false;
 }
 
-/**
- * Check a filter against a single attribute
- *
- * @param [type] $attribute
- * @param [type] $filterValues
- * @return bool
- */
 function filterMatches($attribute, $filterValues): bool
 {
     if (!is_array($filterValues)) {
@@ -239,16 +226,8 @@ function filterMatches($attribute, $filterValues): bool
     return false;
 }
 
-/**
- * Export cards to fritzbox xml
- *
- * @param string $name
- * @param array $cards
- * @param array $conversions
- * @return SimpleXMLElement
- */
-function export(string $name, array $cards, array $conversions): SimpleXMLElement
-{
+function export(array $cards, array $conversions): SimpleXMLElement
+    {
     $xml = new SimpleXMLElement(
         <<<EOT
 <?xml version="1.0" encoding="UTF-8"?>
@@ -259,27 +238,29 @@ EOT
     );
 
     $root = $xml->xpath('//phonebook')[0];
-    $root->addAttribute('name', $name);
+    $root->addAttribute('name', $conversions['phonebook']['name']);
 
     $converter = new Converter($conversions);
 
     foreach ($cards as $card) {
         $contact = $converter->convert($card);
-        // $root->addChild('contact', $contact);
         xml_adopt($root, $contact);
     }
-
     return $xml;
 }
 
-/**
- * Attach xml element to parent
- * https://stackoverflow.com/questions/4778865/php-simplexml-addchild-with-another-simplexmlelement
- *
- * @param SimpleXMLElement $to
- * @param SimpleXMLElement $from
- * @return void
- */
+
+function downloadPhonebook ($config) {
+    
+    $Fritzbox  = $config['fritzbox'];
+    $Phonebook = $config['phonebook'];
+    
+    $fb_pb = new SOApi ($Fritzbox['url'], $Fritzbox['user'], $Fritzbox['password']);
+    return $fb_pb->getFBphonebook($Phonebook['id']);
+}
+
+
+// https://stackoverflow.com/questions/4778865/php-simplexml-addchild-with-another-simplexmlelement
 function xml_adopt(SimpleXMLElement $to, SimpleXMLElement $from)
 {
     $toDom = dom_import_simplexml($to);
@@ -287,22 +268,15 @@ function xml_adopt(SimpleXMLElement $to, SimpleXMLElement $from)
     $toDom->appendChild($toDom->ownerDocument->importNode($fromDom, true));
 }
 
-/**
- * Upload cards to fritzbox
- *
- * @param string $xml
- * @param string $url
- * @param string $user
- * @param string $password
- * @param int $phonebook
- * @return void
- */
-function upload(string $xml, string $url, string $user, string $password, int $phonebook=0)
-{
-    $fritz = new Api($url, $user, $password, 1);
+
+function upload(string $xml, $config) {
+    
+    $fritzbox = $config['fritzbox'];
+    
+    $fritz = new Api($fritzbox['url'], $fritzbox['user'], $fritzbox['password']); //, 1);
 
     $formfields = array(
-        'PhonebookId' => $phonebook
+        'PhonebookId' => $config['phonebook']['id']
     );
 
     $filefields = array(
@@ -317,5 +291,7 @@ function upload(string $xml, string $url, string $user, string $password, int $p
 
     if (strpos($result, 'Das Telefonbuch der FRITZ!Box wurde wiederhergestellt') === false) {
         throw new \Exception('Upload failed');
+        return false;
     }
+    return true;
 }
