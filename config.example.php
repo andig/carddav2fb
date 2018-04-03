@@ -9,15 +9,15 @@ $config = [
 
     'server' => [
         [
-            'url'      => 'https://..',
-            'user'     => '[ACCOUNT]',
-            'password' => '[PASSWORD]',
-            ],                                                      /* define as many as you need   
-        [
-            'url'      => 'https://..',
-            'user'     => '',
+            'url' => 'https://...',
+            'user' => '',
             'password' => '',
-            ],                                                      */
+            ],								/* add as many as you need
+        [
+            'url' => 'https://...',
+            'user' => '',
+            'password' => '',
+            ],								*/
     ],
 
     'fritzbox' => [
@@ -34,31 +34,19 @@ $config = [
     ],
 
     'filters' => [
-        'include' => [                                              /* if empty include all by default
-            'categories' => [                                          if your server is iCloud, groups can be used (XOR)
+        'include' => [                                           // if empty include all by default
+        ],
+        'exclude' => [
+            'category' => [
+                'a', 'b'
             ],
             'group' => [
-            ],                                                      */
+                'c', 'd'
+            ],
         ],
+    ],
 
-        'exclude' => [
-            'categories' => [
-                'A',
-                'B',
-                'C',
-            ],                                                      /*
-            'group' => [                                               if your server is iCloud, groups can be used (XOR)
-                'D',
-                'E',
-                'F',
-            ],                                                      */
-        ],
-
-    'conversions' => [
-        
-        'substitutes' => [                                          // you must not change this! 
-            'PHOTO',                                                // Otherwise image upload failed!
-        ],        
+    'conversions' => [        
         
         'vip' => [
             'categories' => ['VIP'                                  // the category / categories, which should be marked as VIP

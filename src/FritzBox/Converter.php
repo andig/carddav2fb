@@ -38,9 +38,9 @@ class Converter
         $person->addChild('realName', $name);
         
         // add photo
-        if (isset ($this->card->rawPhoto) OR isset ($this->card->photo)) {
+        if (isset($this->card->rawPhoto)) {
             if (isset($this->imagePath)) {
-                $person->addChild('imageURL',$this->imagePath.$this->card->uid.'.jpg');
+                $person->addChild('imageURL', $this->imagePath . $this->card->uid . '.jpg');
             }
         }
         $foundPhone = $this->addPhone();
@@ -50,9 +50,9 @@ class Converter
         if ($foundEmail == true OR $foundPhone == true) {
             return $this->contact;
         }
-        ELSE {                                                   // neither a phone number nor an email in this contact
+        else {                                                   // neither a phone number nor an email in this contact
             $this->contact = new SimpleXMLElement('<void />');
-            $this->contact->addChild('carddav_uid',$this->card->uid);
+            $this->contact->addChild('carddav_uid', $this->card->uid);
             return $this->contact;
         }
     }
@@ -91,12 +91,12 @@ class Converter
                     $phone->addAttribute('id', $idnum);
                     
                     $type = 'other';
-                    $numberType = strtolower ($numberType);
+                    $numberType = strtolower($numberType);
                     
-                    IF (stripos($numberType, 'fax') !== false) {
+                    if (stripos($numberType, 'fax') !== false) {
                         $type = 'fax_work';
                     }
-                    ELSE {
+                    else {
                         foreach ($phoneTypes as $type => $value) {
                             if (stripos($numberType, $type) !== false) {
                                $type = $value;

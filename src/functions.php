@@ -25,17 +25,24 @@ function backendProvider(array $config): Backend
 function download(Backend $backend, $substitutes, callable $callback=null): array
 {
     $backend->setProgress($callback);
-    $backend->setSubstitutes ($substitutes);
+    $backend->setSubstitutes($substitutes);
     return $backend->getVcards();
 }
 
-
-function getImageCachePath ($cachePath = '') {
-    
+/**
+ * getting and if not exists setting the fonpix directory in the path to the designated cache (from config)
+ * If the attempt fails in the cache, an attempt is made to create the directory in the working directory,
+ * if that fails, in the root directory
+ *
+ * @param $cachePath   string    path to the cache from config 
+ * @return                       fullpath to fonpix directory in cache 
+ */
+function getImageCachePath($cachePath = '')
+{
     $imageCache = $cachePath . '/fonpix';                              // ../[cache]/fonpix
     
     if (!file_exists($imageCache)) {
-        IF (!mkdir($imageCache)) {
+        if (!mkdir($imageCache)) {
             $cwd = getcwd() ?? '';                                     // /carddav2fb/fonpix OR /fonpix
             $imageCache = $cwd.'/fonpix';
         }
@@ -43,30 +50,29 @@ function getImageCachePath ($cachePath = '') {
     return $imageCache; 
 }
 
-
-function regularizeSuffixes ($fileList) {
-    
-    $needles = ['JPG' , 'JPEG', 'jpeg'];                               // just in case user changed suffix in cache manual
-    $lowerSuffix = str_replace ($needles, 'jpg', $fileList);
-    return $lowerSuffix;
-}
-
-
+/**
+ * writes image files to the designated cache if the filename (UID) is not already in the cache
+ *
+ * @param $new_files   array     files (filenames with full path) newly stored in cache
+ * @param $config      array
+ * @return                       number of transfered files
+ */
 function storeImages(array $vcards, $cachePath = '')
 {
-    $imageCache = getImageCachePath ($cachePath);
+    $imageCache = getImageCachePath($cachePath);
     $new_files = [];
-        
+    $pattern = ['/JPG/' , '/JPEG/', '/jpeg/'];    
     $cachedFiles = array_diff(scandir($imageCache), array('.', '..'));
-    $cachedFiles = regularizeSuffixes($cachedFiles);
+    $cachedFiles = preg_replace($pattern, 'jpg', $cachedFiles);
             
     foreach ($vcards as $vcard) {
         if (isset($vcard->rawPhoto)) {                                 // skip all other vCards
             if (!in_array($vcard->uid . '.jpg', $cachedFiles)) {       // this UID has recently no file in cache
                 if ($vcard->photoData == 'JPEG') {                     // Fritz!Box only accept jpg-files
-                    $imgFile = imagecreatefromstring ($vcard->rawPhoto);
+                    $imgFile = imagecreatefromstring($vcard->rawPhoto);
                     if ($imgFile !== false) {
                         $fullPath = $imageCache . '/' . $vcard->uid . '.jpg';
+                        $fullPath = str_replace("\xEF\xBB\xBF",'',$fullPath);   // replacing BOM
                         header('Content-Type: image/jpeg');
                         imagejpeg($imgFile, $fullPath);
                         $new_files[] = $fullPath;
@@ -79,8 +85,14 @@ function storeImages(array $vcards, $cachePath = '')
     return $new_files;
 }
 
-
-function uploadImages ($new_files, $config)
+/**
+ * uploaded image files via ftp from the designated cache to the fritzbox fonpix directory
+ *
+ * @param $new_files   array     files (filenames with full path) newly stored in cache
+ * @param $config      array
+ * @return                       number of transfered files
+ */
+function uploadImages($new_files, $config)
 {
     $conn_id = ftp_connect($config['url']);
     $result = ftp_login($conn_id, $config['user'], $config['password']);
@@ -89,25 +101,24 @@ function uploadImages ($new_files, $config)
     if ((!$conn_id) || (!$result)) {
         return;
     }
-    ELSE {
-        ftp_chdir($conn_id, $config['fonpix']);
-        $fonpix_files = ftp_nlist($conn_id, '.');
-        $fonpix_files = regularizeSuffixes ($fonpix_files);
-        IF (!is_array($fonpix_files)) {
-            $fonpix_files = [];
-        }
-        foreach ($new_files as $new_file) {
-            $cachedFile = basename($new_file);
-            IF (!in_array($cachedFile, $fonpix_files)) {                   // there is already a jpg saved for this UID 
-                $local = $new_file;                                    // file from cache
-                $remote = $config['fonpix']. '/'. $cachedFile;
-                If (ftp_put($conn_id, $remote, $local, FTP_BINARY) != false) {
-                    $i++;
-                }
+    ftp_chdir($conn_id, $config['fonpix']);
+    $fonpix_files = ftp_nlist($conn_id, '.');
+    $pattern = ['/JPG/' , '/JPEG/', '/jpeg/'];    
+    $fonpix_files = preg_replace($pattern, 'jpg', $fonpix_files);
+    if (!is_array($fonpix_files)) {
+        $fonpix_files = [];
+    }
+    foreach ($new_files as $new_file) {
+        $cachedFile = basename($new_file);
+        if (!in_array($cachedFile, $fonpix_files)) {                // there is already a jpg saved for this UID 
+            $local = $new_file;                                     // file from cache
+            $remote = $config['fonpix']. '/'. $cachedFile;
+            if (ftp_put($conn_id, $remote, $local, FTP_BINARY) != false) {
+                $i++;
             }
         }
-        ftp_close($conn_id);
     }
+    ftp_close($conn_id);
     return $i;
 }
 
@@ -159,9 +170,8 @@ function filter(array $cards, array $filters): array
 {
     // include selected
     $includeFilter = $filters['include'] ?? [];
-    if (count($includeFilter)) {
+    if (countFilters($includeFilter)) {
         $step1 = [];
-
         foreach ($cards as $card) {
             if (filtersMatch($card, $includeFilter)) {
                 $step1[] = $card;
@@ -169,25 +179,50 @@ function filter(array $cards, array $filters): array
         }
     }
     else {
+        // filter defined but empty sub-rules?
+        if (count($includeFilter)) {
+            error_log('Include filter empty- including all cards');
+        }
         // include all by default
         $step1 = $cards;
     }
-
     $excludeFilter = $filters['exclude'] ?? [];
     if (!count($excludeFilter)) {
         return $step1;
     }
-
     $step2 = [];
     foreach ($step1 as $card) {
         if (!filtersMatch($card, $excludeFilter)) {
             $step2[] = $card;
         }
     }
-
     return $step2;
 }
 
+/**
+ * Count populated filter rules
+ *
+ * @param array $filters
+ * @return int
+ */
+function countFilters(array $filters): int
+{
+    $filterCount = 0;
+    foreach ($filters as $key => $value) {
+        if (is_array($value)) {
+            $filterCount += count($value);
+        }
+    }
+    return $filterCount;
+}
+
+/**
+ * Check a list of filters against a card
+ *
+ * @param [type] $card
+ * @param array $filters
+ * @return bool
+ */
 function filtersMatch($card, array $filters): bool
 {
     foreach ($filters as $attribute => $values) {
@@ -197,16 +232,21 @@ function filtersMatch($card, array $filters): bool
             }
         }
     }
-
     return false;
 }
 
+/**
+ * Check a filter against a single attribute
+ *
+ * @param [type] $attribute
+ * @param [type] $filterValues
+ * @return bool
+ */
 function filterMatches($attribute, $filterValues): bool
 {
     if (!is_array($filterValues)) {
         $filterValues = array($filterMatches);
     }
-
     foreach ($filterValues as $filter) {
         if (is_array($attribute)) {
             // check if any attribute matches
@@ -222,10 +262,16 @@ function filterMatches($attribute, $filterValues): bool
             }
         }
     }
-
     return false;
 }
 
+/**
+ * Export cards to fritzbox xml
+ *
+ * @param array $cards
+ * @param array $conversions
+ * @return SimpleXMLElement
+ */
 function export(array $cards, array $conversions): SimpleXMLElement
     {
     $xml = new SimpleXMLElement(
@@ -244,23 +290,21 @@ EOT
 
     foreach ($cards as $card) {
         $contact = $converter->convert($card);
+        // $root->addChild('contact', $contact); 
         xml_adopt($root, $contact);
     }
+    
     return $xml;
 }
 
-
-function downloadPhonebook ($config) {
-    
-    $Fritzbox  = $config['fritzbox'];
-    $Phonebook = $config['phonebook'];
-    
-    $fb_pb = new SOApi ($Fritzbox['url'], $Fritzbox['user'], $Fritzbox['password']);
-    return $fb_pb->getFBphonebook($Phonebook['id']);
-}
-
-
-// https://stackoverflow.com/questions/4778865/php-simplexml-addchild-with-another-simplexmlelement
+/**
+ * Attach xml element to parent
+ * https://stackoverflow.com/questions/4778865/php-simplexml-addchild-with-another-simplexmlelement
+ *
+ * @param SimpleXMLElement $to
+ * @param SimpleXMLElement $from
+ * @return void
+ */
 function xml_adopt(SimpleXMLElement $to, SimpleXMLElement $from)
 {
     $toDom = dom_import_simplexml($to);
@@ -268,7 +312,13 @@ function xml_adopt(SimpleXMLElement $to, SimpleXMLElement $from)
     $toDom->appendChild($toDom->ownerDocument->importNode($fromDom, true));
 }
 
-
+/**
+ * Upload cards to fritzbox
+ *
+ * @param string $xml
+ * @param string $config
+ * @return boolean
+ */
 function upload(string $xml, $config) {
     
     $fritzbox = $config['fritzbox'];

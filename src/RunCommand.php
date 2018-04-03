@@ -13,7 +13,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 class RunCommand extends Command
 {
     use ConfigTrait;
-    
+   
     
     protected function configure()
     {
@@ -31,9 +31,9 @@ class RunCommand extends Command
         $vcards = array();
         $xcards = array();
         if ($input->getOption('image')) {
-            $substitutes = $this->config['conversions']['substitutes'] ?? '';
+            $substitutes[] = 'PHOTO';
         }
-        ELSE {
+        else {
             $substitutes = [];
         }
         foreach ($this->config['server'] as $server) {
@@ -64,12 +64,12 @@ class RunCommand extends Command
             $new_files = storeImages($filtered, $this->config['script']['cache']);
             $pictures = count($new_files);
             error_log(sprintf("Temporarily stored %d image file(s)", $pictures));
-            If ($pictures > 0) {
+            if ($pictures > 0) {
                 $pictures = uploadImages ($new_files, $this->config['fritzbox']);
                 error_log(sprintf("Uploaded %d image file(s)", $pictures));
             }
         }
-        ELSE {
+        else {
             unset($this->config['phonebook']['imagepath']);
         }
 
@@ -79,7 +79,7 @@ class RunCommand extends Command
         // upload
         error_log("Uploading");
         $xmlStr = $xml->asXML();
-        IF (upload($xmlStr, $this->config) === true) {;
+        if (upload($xmlStr, $this->config) === true) {;
             error_log("Successful uploaded new Fritz!Box phonebook");
         }
     }
