@@ -1,7 +1,7 @@
 <?php
 
 namespace Andig;
-
+  
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputArgument;
@@ -13,7 +13,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
 class RunCommand extends Command
 {
     use ConfigTrait;
-
+   
+    
     protected function configure()
     {
         $this->setName('run')
@@ -29,13 +30,18 @@ class RunCommand extends Command
 
         $vcards = array();
         $xcards = array();
-
-        foreach($this->config['server'] as $server) {
+        if ($input->getOption('image')) {
+            $substitutes[] = 'PHOTO';
+        }
+        else {
+            $substitutes = [];
+        }
+        foreach ($this->config['server'] as $server) {
             $progress = new ProgressBar($output);
             error_log("Downloading vCard(s) from account ".$server['user']);
             $backend = backendProvider($server);
             $progress->start();
-            $xcards = download ($backend, function () use ($progress) {
+            $xcards = download($backend, $substitutes, function () use ($progress) {
                 $progress->advance();
             });
             $progress->finish();
@@ -44,41 +50,37 @@ class RunCommand extends Command
         }
 
         // parse and convert
-        error_log("Parsing vcards");
+        error_log("Parsing vCards");
         $cards = parse($vcards);
-
-        // images
-        if ($input->getOption('image')) {
-            error_log("Downloading images");
-
-            $progress->start();
-            $cards = downloadImages($backend, $cards, function() use ($progress) {
-                $progress->advance();
-            });
-            $progress->finish();
-
-            error_log(sprintf("\nDownloaded %d image(s)", countImages($cards)));
-        }
 
         // conversion
         $filters = $this->config['filters'];
         $filtered = filter($cards, $filters);
+        error_log(sprintf("Converted and filtered %d vCard(s)", count($filtered)));
 
-        error_log(sprintf("Converted %d vcard(s)", count($filtered)));
+        // images
+        if ($input->getOption('image')) {
+            error_log("Detaching and storing image(s)");
+            $new_files = storeImages($filtered, $this->config['script']['cache']);
+            $pictures = count($new_files);
+            error_log(sprintf("Temporarily stored %d image file(s)", $pictures));
+            if ($pictures > 0) {
+                $pictures = uploadImages ($new_files, $this->config['fritzbox']);
+                error_log(sprintf("Uploaded %d image file(s)", $pictures));
+            }
+        }
+        else {
+            unset($this->config['phonebook']['imagepath']);
+        }
 
         // fritzbox format
-        $phonebook = $this->config['phonebook'];
-        $conversions = $this->config['conversions'];
-        $xml = export($phonebook['name'], $filtered, $conversions);
+        $xml = export($filtered, $this->config);
 
         // upload
         error_log("Uploading");
-
         $xmlStr = $xml->asXML();
-
-        $fritzbox = $this->config['fritzbox'];
-        upload($xmlStr, $fritzbox['url'], $fritzbox['user'], $fritzbox['password'], $phonebook['id']);
-
-        error_log("Uploaded fritz phonebook");
+        if (upload($xmlStr, $this->config) === true) {;
+            error_log("Successful uploaded new Fritz!Box phonebook");
+        }
     }
 }

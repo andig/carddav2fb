@@ -223,6 +223,7 @@ class Parser implements \IteratorAggregate
                     case 'PHOTO':
                         if ($rawValue) {
                             $cardData->rawPhoto = $value;
+                            $cardData->photoData = implode(';',$types);
                         } else {
                             $cardData->photo = $value;
                         }
