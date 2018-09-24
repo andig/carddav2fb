@@ -33,52 +33,93 @@ function backendProvider(array $config): Backend
  * @param callable $callback
  * @return array
  */
-function download(Backend $backend, callable $callback=null): array
+function download(Backend $backend, $substitutes, callable $callback=null): array
 {
     $backend->setProgress($callback);
+    $backend->setSubstitutes($substitutes);
     return $backend->getVcards();
 }
 
 /**
- * Download images from CardDAV server
+ * writes image files to the designated cache if the filename (UID) is not already in the cache
  *
- * @param array $cards
- * @return int
+ * @param $vcards     array     downloaded vCards
+ * @param $cachePath  string    (optional) local cache path
+ * @return                      number of local stored images
  */
-function downloadImages(Backend $backend, array $cards, callable $callback=null): array
+function storeImages(array $vcards, $cachePath = '')
 {
-    foreach ($cards as $card) {
-        if (isset($card->photo)) {
-            $uri = $card->photo;
-            $image = $backend->fetchImage($uri);
-            $card->photo_data = utf8_encode($image);
-
-            if (is_callable($callback)) {
-                $callback();
+    $new_files = [];
+    // detecting allready cached files
+    if (!empty($cachePath)) {
+        $imageCache = $cachePath;
+    }
+    else {    
+        $cwd = getcwd() ?? '';                                            // /carddav2fb/fonpix OR /fonpix
+        $imageCache = $cwd.'/fonpix';
+        if (!file_exists($imageCache)) {
+            mkdir($imageCache);
+        }
+    }
+    $pattern = ['/JPG/' , '/JPEG/', '/jpeg/'];    
+    $cachedFiles = array_diff(scandir($imageCache), array('.', '..'));
+    $cachedFiles = preg_replace($pattern, 'jpg', $cachedFiles);
+            
+    foreach ($vcards as $vcard) {
+        if (isset($vcard->rawPhoto)) {                                 // skip all other vCards
+            if (!in_array($vcard->uid . '.jpg', $cachedFiles)) {       // this UID has recently no file in cache
+                if ($vcard->photoData == 'JPEG') {                     // Fritz!Box only accept jpg-files
+                    $imgFile = imagecreatefromstring($vcard->rawPhoto);
+                    if ($imgFile !== false) {
+                        $fullPath = $imageCache . '/' . $vcard->uid . '.jpg';
+                        $fullPath = str_replace("\xEF\xBB\xBF",'',$fullPath);   // replacing BOM
+                        header('Content-Type: image/jpeg');
+                        imagejpeg($imgFile, $fullPath);
+                        $new_files[] = $fullPath;
+                        imagedestroy($imgFile);
+                    }
+                }
             }
         }
     }
-
-    return $cards;
+    return $new_files;
 }
 
 /**
- * Count downloaded images contained in list of vcards
+ * uploading image files via ftp from the designated cache to the fritzbox fonpix directory
  *
- * @param array $cards
- * @return int
+ * @param $new_files   array     files (filenames with full path) newly stored in cache
+ * @param $config      array
+ * @return                       number of transfered files
  */
-function countImages(array $cards): int
+function uploadImages($new_files, $config)
 {
-    $images = 0;
-
-    foreach ($cards as $card) {
-        if (isset($card->photo_data)) {
-            $images++;
+    $conn_id = ftp_connect($config['url']);
+    $result = ftp_login($conn_id, $config['user'], $config['password']);
+    $i = 0;
+    
+    if ((!$conn_id) || (!$result)) {
+        return;
+    }
+    ftp_chdir($conn_id, $config['fonpix']);
+    $fonpix_files = ftp_nlist($conn_id, '.');
+    $pattern = ['/JPG/' , '/JPEG/', '/jpeg/'];    
+    $fonpix_files = preg_replace($pattern, 'jpg', $fonpix_files);
+    if (!is_array($fonpix_files)) {
+        $fonpix_files = [];
+    }
+    foreach ($new_files as $new_file) {
+        $cachedFile = basename($new_file);
+        if (!in_array($cachedFile, $fonpix_files)) {                // there is already a jpg saved for this UID 
+            $local = $new_file;                                     // file from cache
+            $remote = $config['fonpix']. '/'. $cachedFile;
+            if (ftp_put($conn_id, $remote, $local, FTP_BINARY) != false) {
+                $i++;
+            }
         }
     }
-
-    return $images;
+    ftp_close($conn_id);
+    return $i;
 }
 
 /**
@@ -243,12 +284,11 @@ function filterMatches($attribute, $filterValues): bool
 /**
  * Export cards to fritzbox xml
  *
- * @param string $name
  * @param array $cards
  * @param array $conversions
  * @return SimpleXMLElement
  */
-function export(string $name, array $cards, array $conversions): SimpleXMLElement
+function export(array $cards, array $conversions): SimpleXMLElement
 {
     $xml = new SimpleXMLElement(
         <<<EOT
@@ -260,7 +300,7 @@ EOT
     );
 
     $root = $xml->xpath('//phonebook')[0];
-    $root->addAttribute('name', $name);
+    $root->addAttribute('name', $conversions['phonebook']['name']);
 
     $converter = new Converter($conversions);
 
@@ -292,18 +332,17 @@ function xml_adopt(SimpleXMLElement $to, SimpleXMLElement $from)
  * Upload cards to fritzbox
  *
  * @param string $xml
- * @param string $url
- * @param string $user
- * @param string $password
- * @param int $phonebook
+ * @param array $config
  * @return void
  */
-function upload(string $xml, string $url, string $user, string $password, int $phonebook=0)
+function upload(string $xml, $config)
 {
-    $fritz = new Api($url, $user, $password, 1);
+    $fritzbox = $config['fritzbox'];
+    
+    $fritz = new Api($fritzbox['url'], $fritzbox['user'], $fritzbox['password']);
 
     $formfields = array(
-        'PhonebookId' => $phonebook
+        'PhonebookId' => $config['phonebook']['id']
     );
 
     $filefields = array(
@@ -318,5 +357,7 @@ function upload(string $xml, string $url, string $user, string $password, int $p
 
     if (strpos($result, 'Das Telefonbuch der FRITZ!Box wurde wiederhergestellt') === false) {
         throw new \Exception('Upload failed');
+        return false;
     }
+    return true;
 }

@@ -8,35 +8,50 @@ use \SimpleXMLElement;
 class Converter
 {
     private $config;
+    private $imagePath;
 
     public function __construct($config)
     {
-        $this->config = $config;
+        $this->config    = $config['conversions'];
+        $this->imagePath = $config['phonebook']['imagepath'] ?? NULL;
     }
 
     public function convert($card): SimpleXMLElement
     {
         $this->card = $card;
+        $foundEntry = false;
 
         // $contact = $xml->addChild('contact');
         $this->contact = new SimpleXMLElement('<contact />');
 
+        $this->contact->addChild('carddav_uid',$this->card->uid);    // reference for image upload
+        
         $this->addVip();
 
+        // add Person
         $person = $this->contact->addChild('person');
         $name = htmlspecialchars($this->getProperty('realName'));
         $person->addChild('realName', $name);
-        // $person->addChild('ImageURL');
+        
+        // add photo
+        if (isset($this->card->rawPhoto)) {
+            if (isset($this->imagePath)) {
+                $person->addChild('imageURL', $this->imagePath . $this->card->uid . '.jpg');
+            }
+        }
+        
+        $foundPhone = $this->addPhone();
+        
+        $foundEmail = $this->addEmail();
 
-        $this->addPhone();
-        $this->addEmail();
-
-        $person = $this->contact->addChild('setup');
-
-        // print_r($this->contact);
-        // echo($this->contact->asXML().PHP_EOL);
-
-        return $this->contact;
+        if ($foundEmail == true OR $foundPhone == true) {
+            return $this->contact;
+        }
+        else {                                                   // neither a phone number nor an email in this contact
+            $this->contact = new SimpleXMLElement('<void />');
+            $this->contact->addChild('carddav_uid', $this->card->uid);
+            return $this->contact;
+        }
     }
 
     private function addVip()
@@ -54,57 +69,66 @@ class Converter
         // 	<number type="work" vanity="" prio="1" id="0">+490358179022</number>
         // 	<number type="work" vanity="" prio="0" id="1">+400746653254</number></telephony>
 
-        $telephony = $this->contact->addChild('telephony');
-
+        $foundPhone = false;
         $replaceCharacters = $this->config['phoneReplaceCharacters'] ?? array();
         $phoneTypes = $this->config['phoneTypes'] ?? array();
 
         if (isset($this->card->phone)) {
+            $foundPhone = true;
+            $telephony = $this->contact->addChild('telephony');
+            $idnum = -1;
             foreach ($this->card->phone as $numberType => $numbers) {
                 foreach ($numbers as $idx => $number) {
+                    $idnum++;
                     if (count($replaceCharacters)) {
+                        $number = str_replace("\xc2\xa0", "\x20", $number);   // delete the wrong ampersand convertion
                         $number = strtr($number, $replaceCharacters);
                         $number = trim(preg_replace('/\s+/', ' ', $number));
                     }
 
                     $phone = $telephony->addChild('number', $number);
-                    $phone->addAttribute('id', $idx);
+                    $phone->addAttribute('id', $idnum);
 
                     $type = 'other';
+                    $numberType = strtolower($numberType);
 
-                    foreach ($phoneTypes as $type => $value) {
-                        if (strpos($numberType, $type) !== false) {
-                            $type = $value;
-                            if (strpos($numberType, 'FAX') !== false) {
-                                $type = 'fax_' . $type;
+                    if (stripos($numberType, 'fax') !== false) {
+                        $type = 'fax_work';
+                    }
+                    else {
+                        foreach ($phoneTypes as $type => $value) {
+                            if (stripos($numberType, $type) !== false) {
+                                $type = $value;
+                                break;
                             }
-
-                            break;
                         }
                     }
 
                     $phone->addAttribute('type', $type);
 
-                    if (strpos($numberType, 'pref') !== false) {
-                        $phone->addAttribute('prio', 1);
-                    }
+                }    
+                if (strpos($numberType, 'pref') !== false) {
+                    $phone->addAttribute('prio', 1);
+                }
 
                     // $phone->addAttribute('vanity', '');
-                }
             }
         }
+        return $foundPhone;
     }
 
     private function addEmail()
     {
         // <services>
-        // 	<email classifier="work" id="0">KTS.Michaelis.Hannover@evlka.de</email>
-        // 	<email classifier="work" id="1">Kindertagesstaette@michaelis-hannover.de</email></
+        // 	<email classifier="work" id="0">no-reply@dummy.de</email>
+        // 	<email classifier="work" id="1">no-reply@dummy.de</email></
 
-        $services = $this->contact->addChild('services');
+        $foundEmail = false;
         $emailTypes = $this->config['emailTypes'] ?? array();
 
         if (isset($this->card->email)) {
+            $foundEmail = true;
+            $services = $this->contact->addChild('services');
             foreach ($this->card->email as $emailType => $addresses) {
                 foreach ($addresses as $idx => $addr) {
                     $email = $services->addChild('email', $addr);
@@ -121,6 +145,7 @@ class Converter
                 }
             }
         }
+        return $foundEmail;
     }
 
     private function getProperty(string $property): string
