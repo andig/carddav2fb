@@ -62,16 +62,11 @@ class RunCommand extends Command
         // images
         if ($input->getOption('image')) {
             error_log("Detaching and storing image(s)");
-            $new_files = storeImages($filtered);
-            $pictures = count($new_files);
-            error_log(sprintf("Temporarily stored %d image file(s)", $pictures));
-            if ($pictures > 0) {
-                $pictures = uploadImages ($new_files, $this->config['fritzbox']);
-                error_log(sprintf("Uploaded %d image file(s)", $pictures));
-            }
+            $pictures = uploadImages($filtered, $this->config['fritzbox']);
+                error_log(sprintf("Uploaded %d image file(s)", $pictures)); 
         }
         else {
-            unset($this->config['phonebook']['imagepath']);    // otherwise convert will set wrong links
+            unset($this->config['phonebook']['imagepath']);             // otherwise convert will set wrong links
         }
         
         // fritzbox format

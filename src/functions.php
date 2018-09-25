@@ -41,84 +41,33 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
 }
 
 /**
- * writes image files to the designated cache if the filename (UID) is not already in the cache
+ * uploading image files via ftp to the fritzbox fonpix directory
  *
  * @param $vcards     array     downloaded vCards
- * @param $cachePath  string    (optional) local cache path
- * @return                      number of local stored images
+ * @param $config     array
+ * @return                      number of transfered files
  */
-function storeImages(array $vcards, $cachePath = '')
+function uploadImages(array $vcards, $config)
 {
-    $new_files = [];
-    // detecting allready cached files
-    if (!empty($cachePath)) {
-        $imageCache = $cachePath;
-    }
-    else {    
-        $cwd = getcwd() ?? '';                                            // /carddav2fb/fonpix OR /fonpix
-        $imageCache = $cwd.'/fonpix';
-        if (!file_exists($imageCache)) {
-            mkdir($imageCache);
-        }
-    }
-    $pattern = ['/JPG/' , '/JPEG/', '/jpeg/'];    
-    $cachedFiles = array_diff(scandir($imageCache), array('.', '..'));
-    $cachedFiles = preg_replace($pattern, 'jpg', $cachedFiles);
-            
+    $ftp_destination = "ftp://".$config['user'].":".$config['password']."@".$config['url']."/".$config['fonpix']."/";
+    $i = 0;
+    
     foreach ($vcards as $vcard) {
         if (isset($vcard->rawPhoto)) {                                 // skip all other vCards
-            if (!in_array($vcard->uid . '.jpg', $cachedFiles)) {       // this UID has recently no file in cache
-                if ($vcard->photoData == 'JPEG') {                     // Fritz!Box only accept jpg-files
-                    $imgFile = imagecreatefromstring($vcard->rawPhoto);
-                    if ($imgFile !== false) {
-                        $fullPath = $imageCache . '/' . $vcard->uid . '.jpg';
-                        $fullPath = str_replace("\xEF\xBB\xBF",'',$fullPath);   // replacing BOM
-                        header('Content-Type: image/jpeg');
-                        imagejpeg($imgFile, $fullPath);
-                        $new_files[] = $fullPath;
-                        imagedestroy($imgFile);
-                    }
+            if ($vcard->photoData == 'JPEG') {                         // Fritz!Box only accept jpg-files
+                $imgFile = imagecreatefromstring($vcard->rawPhoto);
+                if ($imgFile !== false) {
+                    $ftp_destination = $ftp_destination . $vcard->uid . '.jpg';
+                    ob_start();
+                    imagejpeg($imgFile, NULL);
+                    $contents = ob_get_clean();
+                    file_put_contents($ftp_destination, $contents);  
+                    $i++;  
+                    imagedestroy($imgFile);
                 }
             }
         }
     }
-    return $new_files;
-}
-
-/**
- * uploading image files via ftp from the designated cache to the fritzbox fonpix directory
- *
- * @param $new_files   array     files (filenames with full path) newly stored in cache
- * @param $config      array
- * @return                       number of transfered files
- */
-function uploadImages($new_files, $config)
-{
-    $conn_id = ftp_connect($config['url']);
-    $result = ftp_login($conn_id, $config['user'], $config['password']);
-    $i = 0;
-    
-    if ((!$conn_id) || (!$result)) {
-        return;
-    }
-    ftp_chdir($conn_id, $config['fonpix']);
-    $fonpix_files = ftp_nlist($conn_id, '.');
-    $pattern = ['/JPG/' , '/JPEG/', '/jpeg/'];    
-    $fonpix_files = preg_replace($pattern, 'jpg', $fonpix_files);
-    if (!is_array($fonpix_files)) {
-        $fonpix_files = [];
-    }
-    foreach ($new_files as $new_file) {
-        $cachedFile = basename($new_file);
-        if (!in_array($cachedFile, $fonpix_files)) {                // there is already a jpg saved for this UID 
-            $local = $new_file;                                     // file from cache
-            $remote = $config['fonpix']. '/'. $cachedFile;
-            if (ftp_put($conn_id, $remote, $local, FTP_BINARY) != false) {
-                $i++;
-            }
-        }
-    }
-    ftp_close($conn_id);
     return $i;
 }
 
