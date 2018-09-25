@@ -168,9 +168,10 @@ class Backend
      *
      * @param   string $vcard               single raw vCard
      * @param   string $substituteID        the property whose value is to be replaced ('LOGO', 'KEY', 'PHOTO' or 'SOUND')
+     * @server  string                      the current CardDAV server adress
      * @return  string                      single raw vCard with embedded value
      */
-    private function embeddingBase64($vcard, $substituteID) 
+    private function embeddingBase64($vcard, $substituteID, $server) 
     {
         $search_card = strtoupper($vcard);                             // $equivalent to substituteID in 'CAPITALS'
         if (!preg_match("/$substituteID/", $search_card)) {    // rough check if searched element is ever included in vCard
@@ -193,18 +194,25 @@ class Backend
             if (!preg_match("/http/", $value)) {                       // no external URL -> must be already base64 or local
                 return $vcard;
             }
-            else {                                                     // get the data from the external URL
-                $embedded = $this->getlinkedData($value);
-                switch ($version) {
-                    case 3:                                            // assemble the new line
-                        $newline = $substituteID . ';TYPE=' . strtoupper($embedded['subtype']) . ';ENCODING=b:' . $embedded['base64data'];
-                        break;
-                    case 4:                                            // assemble the new line
-                        $newline = $substituteID . ':data:' . $embedded['mimetype'] . ';base64,' . $embedded['base64data'];
-                        break;
+            else {                                                     // check if mime is linked onto the same server 
+                $serv = explode('/', $server, 4);                      // get the beginning of the current server adress
+                $link = explode('/', $value, 4);                       // get the beginning of the linked adress
+                if (strcasecmp($serv[2], $link[2]) !== 0) {            // if they aren´t equal authorisation will fail!
+                    return $vcard;
                 }
-                $lines[$key] = $newline ?? $lines[$key];               // reassembel the lines to a consitent vCard
-                $vcard = implode(PHP_EOL, $lines);
+                else {                                                 // get the data from the external URL 
+                    $embedded = $this->getlinkedData($value);
+                    switch ($version) {                                // the different vCard versions must be considered
+                        case 3:                                        // assemble the new line
+                            $newline = $substituteID . ';TYPE=' . strtoupper($embedded['subtype']) . ';ENCODING=b:' . $embedded['base64data'];
+                            break;
+                        case 4:                                        // assemble the new line
+                            $newline = $substituteID . ':data:' . $embedded['mimetype'] . ';base64,' . $embedded['base64data'];
+                            break;
+                    }
+                    $lines[$key] = $newline ?? $lines[$key];           // reassembel the lines to a consitent vCard
+                    $vcard = implode(PHP_EOL, $lines);
+                }
             }
             return $vcard;
         }
@@ -304,7 +312,7 @@ class Backend
 
             if (isset($this->substitutes)) {
                 foreach ($this->substitutes as $substitute) {
-                    $body = $this->embeddingBase64($body, $substitute);
+                    $body = $this->embeddingBase64($body, $substitute, $this->url);
                 }
             }
             if (is_callable($this->callback)) {
