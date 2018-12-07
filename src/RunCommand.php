@@ -46,22 +46,25 @@ class RunCommand extends Command
             });
             $progress->finish();
             $vcards = array_merge($vcards, $xcards);
-            error_log(sprintf("\nDownloaded %d vCard(s)", count($vcards)));
+            $quantity = count($vcards);
+            error_log(sprintf("\nDownloaded %d vCard(s)", $quantity));
         }
 
-        // parse and convert
-        error_log("Parsing vcards");
-        $cards = parse($vcards);
-
-        // conversion
+        // classyfication
+        error_log("Dissolving groups (e.g. iCloud)");
+        $cards = classify($vcards);
+        $passel = count($cards);
+        error_log(sprintf("Dissolved %d group(s)", $quantity - $passel));
+                
+        // filter
+        error_log(sprintf("Filtering %d vCard(s)", $passel));
         $filters = $this->config['filters'];
         $filtered = filter($cards, $filters);
-
-        error_log(sprintf("Converted %d vcard(s)", count($filtered)));
-
-        // images
+        error_log(sprintf("Filtered out %d vCard(s)", $passel - count($filtered)));
+        
+        // image upload
         if ($input->getOption('image')) {
-            error_log("Detaching and storing image(s)");
+            error_log("Detaching and uploading image(s)");
             $pictures = uploadImages($filtered, $this->config['fritzbox']);
                 error_log(sprintf("Uploaded %d image file(s)", $pictures)); 
         }
@@ -71,6 +74,7 @@ class RunCommand extends Command
         
         // fritzbox format
         $xml = export($filtered, $this->config);
+        error_log(sprintf("Converted %d vCard(s)", count($filtered)));
 
         // upload
         error_log("Uploading");

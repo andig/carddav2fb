@@ -50,19 +50,22 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
 function uploadImages(array $vcards, $config)
 {
     $ftp_destination = "ftp://".$config['user'].":".$config['password']."@".$config['url']."/".$config['fonpix']."/";
+    $options = array('ftp' => array('overwrite' => true));
+    $context = stream_context_create($options);
     $i = 0;
     
     foreach ($vcards as $vcard) {
-        if (isset($vcard->rawPhoto)) {                                 // skip all other vCards
-            if ($vcard->photoData == 'JPEG') {                         // Fritz!Box only accept jpg-files
+        if (isset($vcard->rawPhoto)) {                                     // skip all other vCards
+            if (preg_match("/JPEG/", strtoupper($vcard->photoData))) {     // Fritz!Box only accept jpg-files
                 $imgFile = imagecreatefromstring($vcard->rawPhoto);
                 if ($imgFile !== false) {
                     $ftp_destination = $ftp_destination . $vcard->uid . '.jpg';
                     ob_start();
                     imagejpeg($imgFile, NULL);
                     $contents = ob_get_clean();
-                    file_put_contents($ftp_destination, $contents);  
-                    $i++;  
+                    if (file_put_contents($ftp_destination, $contents, 0, $context) !== false) {;  
+                        $i++;
+                    }
                     imagedestroy($imgFile);
                 }
             }
@@ -72,30 +75,23 @@ function uploadImages(array $vcards, $config)
 }
 
 /**
- * Parse an array of raw vcards into POPOs
+ * Dissolving the groups of iCloud contacts
  *
  * @param array $cards
  * @return array
  */
-function parse(array $cards): array
+function classify (array $vcards): array
 {
-    $vcards = [];
     $groups = [];
 
-    // parse all vcards
-    foreach ($cards as $card) {
-        $parser = new Parser($card);
-        $vcard = $parser->getCardAtIndex(0);
-
-        // separate iCloud groups
+    foreach ($vcards as $key => $vcard) {          // separate iCloud groups
         if (isset($vcard->xabsmember)) {
             $groups[$vcard->fullname] = $vcard->xabsmember;
+            unset($vcards[$key]);
             continue;
         }
-
-        $vcards[] = $vcard;
     }
-
+    $vcards = array_values($vcards);
     // assign group memberships
     foreach ($vcards as $vcard) {
         foreach ($groups as $group => $members) {
@@ -103,13 +99,11 @@ function parse(array $cards): array
                 if (!isset($vcard->group)) {
                     $vcard->group = array();
                 }
-
                 $vcard->group = $group;
                 break;
             }
         }
     }
-
     return $vcards;
 }
 

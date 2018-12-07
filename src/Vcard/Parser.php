@@ -231,8 +231,25 @@ class Parser implements \IteratorAggregate
                     case 'LOGO':
                         if ($rawValue) {
                             $cardData->rawLogo = $value;
+                            $cardData->logoData = implode(';',$types);
                         } else {
                             $cardData->logo = $value;
+                        }
+                        break;
+                    case 'SOUND':
+                        if ($rawValue) {
+                            $cardData->rawSound = $value;
+                            $cardData->SoundData = implode(';',$types);
+                        } else {
+                            $cardData->photo = $value;
+                        }
+                        break;
+                    case 'KEY':
+                        if ($rawValue) {
+                            $cardData->rawKey = $value;
+                            $cardData->keyData = implode(';',$types);
+                        } else {
+                            $cardData->key = $value;
                         }
                         break;
                     case 'NOTE':
