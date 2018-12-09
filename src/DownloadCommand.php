@@ -32,13 +32,8 @@ class DownloadCommand extends Command
         $this->loadConfig($input);
 
         $vcards = array();
-        if ($input->getOption('image')) {
-            $substitutes[] = 'PHOTO';
-        }
-        else {
-            $substitutes = [];
-        }
-
+        $substitutes = ($input->getOption('image')) ? ['PHOTO'] : [];
+        
         if ($filename = $input->getArgument('filename')) {
             // read from file
             $vcards = json_decode(file_get_contents($filename));
@@ -51,6 +46,7 @@ class DownloadCommand extends Command
             foreach($this->config['server'] as $server) {
                 $progress = new ProgressBar($output);
                 error_log("Downloading vCard(s) from account ".$server['user']);
+                
                 $backend = backendProvider($server);
                 $progress->start();
                 $downloaded = download($backend, $substitutes, function () use ($progress) {

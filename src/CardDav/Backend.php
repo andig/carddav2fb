@@ -169,10 +169,10 @@ class Backend
      *
      * @param   string $vcard               single parsed vCard
      * @param   string $substituteID        the property whose value is to be replaced ('logo', 'key', 'photo' or 'sound')
-     * @param   string                      the current CardDAV server adress
+     * @param   string $server              the current CardDAV server adress
      * @return  string                      single vCard with embedded value
      */
-    private function embeddingBase64($vcard, $substituteID, $server) 
+    private function embedBase64($vcard, $substituteID, $server) 
     {
         if (!array_key_exists($substituteID, $vcard)) {
             return $vcard;
@@ -277,7 +277,7 @@ class Backend
             
             if (isset($this->substitutes)) {
                 foreach ($this->substitutes as $substitute) {
-                    $vcard = $this->embeddingBase64($vcard, $substitute, $this->url);
+                    $vcard = $this->embedBase64($vcard, $substitute, $this->url);
                 }
             }
             if (is_callable($this->callback)) {

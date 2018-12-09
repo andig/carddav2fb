@@ -30,7 +30,7 @@ class UploadCommand extends Command
         $xml = file_get_contents($filename);
 
         error_log("Uploading Fritz!Box phonebook");
-        IF (upload($xml, $this->config) === true) {
+        IF (upload($xml, $this->config)) {
             error_log("Successful uploaded new Fritz!Box phonebook");
         }    
     }

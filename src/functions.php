@@ -49,7 +49,12 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
  */
 function uploadImages(array $vcards, $config)
 {
-    $ftp_destination = "ftp://".$config['user'].":".$config['password']."@".$config['url']."/".$config['fonpix']."/";
+    $user     = $config['user'];
+    $password = $config['password'];
+    $url      = $config['url'];
+    $path     = $config['fonpix'];
+    $format   = 'ftp://%1$s:%2$s@%3$s/%4$s/';
+    $ftp_destination = sprintf($format, $user, $password, $url, $path);
     $options = array('ftp' => array('overwrite' => true));
     $context = stream_context_create($options);
     $i = 0;
