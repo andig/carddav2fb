@@ -19,9 +19,7 @@ class Converter
     public function convert($card): SimpleXMLElement
     {
         $this->card = $card;
-        $foundEntry = false;
 
-        // $contact = $xml->addChild('contact');
         $this->contact = new SimpleXMLElement('<contact />');
 
         $this->contact->addChild('carddav_uid',$this->card->uid);    // reference for image upload
@@ -40,18 +38,11 @@ class Converter
             }
         }
         
-        $foundPhone = $this->addPhone();
+        $this->addPhone();
         
-        $foundEmail = $this->addEmail();
+        $this->addEmail();
 
-        if ($foundEmail == true OR $foundPhone == true) {
-            return $this->contact;
-        }
-        else {                                                   // neither a phone number nor an email in this contact
-            $this->contact = new SimpleXMLElement('<void />');
-            $this->contact->addChild('carddav_uid', $this->card->uid);
-            return $this->contact;
-        }
+        return $this->contact;
     }
 
     private function addVip()
@@ -69,19 +60,17 @@ class Converter
         // 	<number type="work" vanity="" prio="1" id="0">+490358179022</number>
         // 	<number type="work" vanity="" prio="0" id="1">+400746653254</number></telephony>
 
-        $foundPhone = false;
         $replaceCharacters = $this->config['phoneReplaceCharacters'] ?? array();
         $phoneTypes = $this->config['phoneTypes'] ?? array();
 
         if (isset($this->card->phone)) {
-            $foundPhone = true;
             $telephony = $this->contact->addChild('telephony');
             $idnum = -1;
             foreach ($this->card->phone as $numberType => $numbers) {
                 foreach ($numbers as $idx => $number) {
                     $idnum++;
                     if (count($replaceCharacters)) {
-                        $number = str_replace("\xc2\xa0", "\x20", $number);   // delete the wrong ampersand convertion
+                        $number = str_replace("\xc2\xa0", "\x20", $number);   // delete the wrong ampersand conversion
                         $number = strtr($number, $replaceCharacters);
                         $number = trim(preg_replace('/\s+/', ' ', $number));
                     }
@@ -110,11 +99,8 @@ class Converter
                 if (strpos($numberType, 'pref') !== false) {
                     $phone->addAttribute('prio', 1);
                 }
-
-                    // $phone->addAttribute('vanity', '');
             }
         }
-        return $foundPhone;
     }
 
     private function addEmail()
@@ -123,11 +109,9 @@ class Converter
         // 	<email classifier="work" id="0">no-reply@dummy.de</email>
         // 	<email classifier="work" id="1">no-reply@dummy.de</email></
 
-        $foundEmail = false;
         $emailTypes = $this->config['emailTypes'] ?? array();
 
         if (isset($this->card->email)) {
-            $foundEmail = true;
             $services = $this->contact->addChild('services');
             foreach ($this->card->email as $emailType => $addresses) {
                 foreach ($addresses as $idx => $addr) {
@@ -140,12 +124,9 @@ class Converter
                             break;
                         }
                     }
-
-                    // $email->addAttribute('vanity', '');
                 }
             }
         }
-        return $foundEmail;
     }
 
     private function getProperty(string $property): string

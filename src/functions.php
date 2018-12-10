@@ -48,12 +48,7 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
  * @return                      number of transfered files
  */
 function uploadImages(array $vcards, $config)
-{
-    $user     = $config['user'];
-    $password = $config['password'];
-    $url      = $config['url'];
-    $path     = $config['fonpix'];
-    
+{   
     $options = array('ftp' => array('overwrite' => true));
     $context = stream_context_create($options);
     $i = 0;
@@ -63,11 +58,17 @@ function uploadImages(array $vcards, $config)
             if (preg_match("/JPEG/", strtoupper($vcard->photoData))) {     // Fritz!Box only accept jpg-files
                 $imgFile = imagecreatefromstring($vcard->rawPhoto);
                 if ($imgFile !== false) {
-                    $destination = sprintf('ftp://%1$s:%2$s@%3$s/%4$s/%5$s.jpg', $user, $password, $url, $path, $vcard->uid);
+                    $ftp_destination = sprintf('ftp://%1$s:%2$s@%3$s/%4$s/%5$s.jpg',
+	                    $config['user'], 
+	                    $config['password'], 
+	                    $config['url'], 
+	                    $config['fonpix'],
+                        $vcard->uid
+                    );
                     ob_start();
                     imagejpeg($imgFile, NULL);
                     $contents = ob_get_clean();
-                    if (file_put_contents($destination, $contents, 0, $context) !== false) {;  
+                    if (file_put_contents($ftp_destination, $contents, 0, $context) !== false) {
                         $i++;
                     }
                     imagedestroy($imgFile);

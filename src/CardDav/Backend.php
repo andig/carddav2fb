@@ -67,7 +67,7 @@ class Backend
     private $client;
     
     /**
-     * Set Subtitutions of links to embedded data
+     * Set subtitutions of links to embedded data
      */
     private $substitutes = [];
 
@@ -91,7 +91,7 @@ class Backend
     public function setSubstitutes($elements) 
     {
         foreach ($elements as $element) {
-            $this->substitutes [] = strtolower($element);
+            $this->substitutes[] = strtolower($element);
         }
     }
 
@@ -186,7 +186,7 @@ class Backend
         if (strcasecmp($serv[2], $link[2]) !== 0) {            // if they aren´t equal authorisation will fail!
             return $vcard;
         }
-        $embedded = $this->getlinkedData($vcard->{$substituteID});   // get the data from the external URL
+        $embedded = $this->getLinkedData($vcard->{$substituteID});   // get the data from the external URL
         $types = '';
         switch ($vcard->version) {                             // the different vCard versions must be considered
             case '3.0':
@@ -227,7 +227,7 @@ class Backend
      *                  'parameters',  whatever
      *                  'data']        the base64 encoded data
      */
-    public function getlinkedData($uri)
+    public function getLinkedData($uri)
     {
         $externalData = array();
         

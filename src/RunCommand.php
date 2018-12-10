@@ -49,14 +49,14 @@ class RunCommand extends Command
         // classyfication
         error_log("Dissolving groups (e.g. iCloud)");
         $cards = classify($vcards);
-        $zcards = count($cards);
-        error_log(sprintf("Dissolved %d group(s)", $quantity - $zcards));
+        $remain = count($cards);
+        error_log(sprintf("Dissolved %d group(s)", $quantity - $remain));
                 
         // filter
-        error_log(sprintf("Filtering %d vCard(s)", $zcards));
+        error_log(sprintf("Filtering %d vCard(s)", $remain));
         $filters = $this->config['filters'];
         $filtered = filter($cards, $filters);
-        error_log(sprintf("Filtered out %d vCard(s)", $zcards - count($filtered)));
+        error_log(sprintf("Filtered out %d vCard(s)", $remain - count($filtered)));
         
         // image upload
         if ($input->getOption('image')) {
@@ -77,7 +77,7 @@ class RunCommand extends Command
 
         $xmlStr = $xml->asXML();
 
-        IF (upload($xmlStr, $this->config)) {
+        if (upload($xmlStr, $this->config)) {
             error_log("Successful uploaded new Fritz!Box phonebook");
         }
     }
