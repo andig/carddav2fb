@@ -67,7 +67,7 @@ class Backend
     private $client;
     
     /**
-     * Set subtitutions of links to embedded data
+     * Set substitutions of links to embedded data
      */
     private $substitutes = [];
 
