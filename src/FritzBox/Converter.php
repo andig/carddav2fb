@@ -57,8 +57,8 @@ class Converter
     private function addPhone()
     {
         // <telephony>
-        // 	<number type="work" vanity="" prio="1" id="0">+490358179022</number>
-        // 	<number type="work" vanity="" prio="0" id="1">+400746653254</number></telephony>
+        //  <number type="work" vanity="" prio="1" id="0">+490358179022</number>
+        //  <number type="work" vanity="" prio="0" id="1">+400746653254</number></telephony>
 
         $replaceCharacters = $this->config['phoneReplaceCharacters'] ?? array();
         $phoneTypes = $this->config['phoneTypes'] ?? array();
@@ -106,8 +106,8 @@ class Converter
     private function addEmail()
     {
         // <services>
-        // 	<email classifier="work" id="0">no-reply@dummy.de</email>
-        // 	<email classifier="work" id="1">no-reply@dummy.de</email></
+        //  <email classifier="work" id="0">no-reply@dummy.de</email>
+        //  <email classifier="work" id="1">no-reply@dummy.de</email></
 
         $emailTypes = $this->config['emailTypes'] ?? array();
 

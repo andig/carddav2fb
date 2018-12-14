@@ -46,9 +46,9 @@ class RunCommand extends Command
             error_log(sprintf("\nDownloaded %d vCard(s)", $quantity));
         }
 
-        // classyfication
+        // dissolve
         error_log("Dissolving groups (e.g. iCloud)");
-        $cards = classify($vcards);
+        $cards = dissolveGroups($vcards);
         $remain = count($cards);
         error_log(sprintf("Dissolved %d group(s)", $quantity - $remain));
                 
@@ -62,12 +62,12 @@ class RunCommand extends Command
         if ($input->getOption('image')) {
             error_log("Detaching and uploading image(s)");
             $pictures = uploadImages($filtered, $this->config['fritzbox']);
-                error_log(sprintf("Uploaded %d image file(s)", $pictures)); 
+            error_log(sprintf("Uploaded %d image file(s)", $pictures)); 
         }
         else {
             unset($this->config['phonebook']['imagepath']);             // otherwise convert will set wrong links
         }
-        
+                
         // fritzbox format
         $xml = export($filtered, $this->config);
         error_log(sprintf("Converted %d vCard(s)", count($filtered)));
@@ -77,8 +77,7 @@ class RunCommand extends Command
 
         $xmlStr = $xml->asXML();
 
-        if (upload($xmlStr, $this->config)) {
-            error_log("Successful uploaded new Fritz!Box phonebook");
-        }
+        upload($xmlStr, $this->config);
+        error_log("Successful uploaded new Fritz!Box phonebook");
     }
 }

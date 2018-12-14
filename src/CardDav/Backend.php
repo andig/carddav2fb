@@ -196,23 +196,10 @@ class Backend
                 $types = "data:" . $embedded['mimetype'] . ";base64";
                 break;
         }
-        switch ($substituteID) {
-            case 'photo':
-                $vcard->rawPhoto  = $embedded['data'];
-                $vcard->photoData = $types;
-                break;
-            case 'logo':
-                $vcard->rawLogo  = $embedded['data'];
-                $vcard->logoData = $types;
-                break;
-            case 'sound':
-                $vcard->rawSound  = $embedded['data'];
-                $vcard->SoundData = $types;
-                break;
-            case 'key':
-                $vcard->rawKey  = $embedded['data'];
-                $vcard->keyData = $types;    
-        }
+        $rawField  = "raw" . ucfirst($substituteID);
+        $dataField = $substituteID . "Data";
+        $vcard->$rawField  = $embedded['data'];
+        $vcard->$dataField = $types;  
         return $vcard;
     }
 
@@ -249,11 +236,13 @@ class Backend
             @list($mimeType,$parameters) = explode(';', $contentType[0], 2);
             @list($type, $subType) = explode('/', $mimeType);
                         
-            $externalData['mimetype']   = $mimeType ?? '';
-            $externalData['type']       = $type ?? '';
-            $externalData['subtype']    = $subType ?? '';
-            $externalData['parameters'] = $parameters ?? '';
-            $externalData['data']       = (string)$response->getBody();
+            $externalData = [
+                'mimetype'   => $mimeType ?? '',
+                'type'       => $type ?? '',
+                'subtype'    => $subType ?? '',
+                'parameters' => $parameters ?? '',
+                'data'       => (string)$response->getBody(),
+            ];
         }
         return $externalData;
     }

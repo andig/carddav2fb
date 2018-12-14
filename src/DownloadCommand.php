@@ -63,9 +63,9 @@ class DownloadCommand extends Command
             }
         }
 
-        // classyfication
+        // dissolve
         error_log("Dissolving groups (e.g. iCloud)");
-        $cards = classify($vcards);
+        $cards = dissolveGroups($vcards);
         $json = json_encode($cards, self::JSON_OPTIONS);
 
         echo $json;

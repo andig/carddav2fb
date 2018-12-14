@@ -41,7 +41,7 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
 }
 
 /**
- * uploading image files via ftp to the fritzbox fonpix directory
+ * upload image files via ftp to the fritzbox fonpix directory
  *
  * @param $vcards     array     downloaded vCards
  * @param $config     array
@@ -59,10 +59,10 @@ function uploadImages(array $vcards, $config)
                 $imgFile = imagecreatefromstring($vcard->rawPhoto);
                 if ($imgFile !== false) {
                     $ftp_destination = sprintf('ftp://%1$s:%2$s@%3$s/%4$s/%5$s.jpg',
-	                    $config['user'], 
-	                    $config['password'], 
-	                    $config['url'], 
-	                    $config['fonpix'],
+                        $config['user'], 
+                        $config['password'], 
+                        $config['url'], 
+                        $config['fonpix'],
                         $vcard->uid
                     );
                     ob_start();
@@ -80,12 +80,12 @@ function uploadImages(array $vcards, $config)
 }
 
 /**
- * Dissolving the groups of iCloud contacts
+ * Dissolve the groups of iCloud contacts
  *
  * @param array $cards
  * @return array
  */
-function classify (array $vcards): array
+function dissolveGroups (array $vcards): array
 {
     $groups = [];
 
@@ -305,7 +305,5 @@ function upload(string $xml, $config)
 
     if (strpos($result, 'Das Telefonbuch der FRITZ!Box wurde wiederhergestellt') === false) {
         throw new \Exception('Upload failed');
-        return false;
     }
-    return true;
 }
