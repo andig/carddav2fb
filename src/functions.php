@@ -72,7 +72,7 @@ function uploadImages(array $vcards, $config)
                         $i++;
                     }
                     else {
-                        unset ($vcard->rawPhoto);                          // no wrong link will set in phonebook
+                        unset($vcard->rawPhoto);                           // no wrong link will set in phonebook
                         error_log(sprintf("ftp access denied for %s.jpg to %s!", $vcard->uid, $config['fonpix']));
                     }
                     imagedestroy($imgFile);
