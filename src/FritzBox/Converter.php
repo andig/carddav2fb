@@ -28,8 +28,7 @@ class Converter
         $this->numbers  = $this->getPhoneNumbers();                      // get array of prequalified phone numbers
         $this->adresses = $this->getEmailAdresses();                     // get array of prequalified email adresses
 
-        while ((count($this->numbers) > 0) || (count($this->adresses) > 0)) {
-
+        while ((count($this->numbers)) || (count($this->adresses))) {
             $this->contact = new SimpleXMLElement('<contact />');
             $this->contact->addChild('carddav_uid',$this->card->uid);    // reference for image upload
             $this->addVip();
@@ -44,11 +43,11 @@ class Converter
                 }
             }
             // add Phone
-            if (count($this->numbers) > 0) {
+            if (count($this->numbers)) {
                 $this->addPhone();
             }
             // add eMail
-            if (count($this->adresses) > 0) {
+            if (count($this->adresses)) {
                 $this->addEmail();
             }
             $contacts[] = $this->contact;
@@ -65,11 +64,11 @@ class Converter
         }
     }
 
-    private function addPhone() {
-
+    private function addPhone()
+    {
         $telephony = $this->contact->addChild('telephony');
         $phoneCounter = 0;
-        while (count($this->numbers) > 0) {
+        while (count($this->numbers)) {
             $phone = $telephony->addChild('number', $this->numbers[0]['number']);
             $phone->addAttribute('id', $phoneCounter);
             if (isset($this->numbers[0]['type'])) {
@@ -93,11 +92,11 @@ class Converter
         }
     }
 
-    private function addEmail () {
-
+    private function addEmail()
+    {
         $services = $this->contact->addChild('services');
         $eMailCounter = 0;
-        while (count($this->adresses) > 0) {
+        while (count($this->adresses)) {
             $email = $services->addChild('email', $this->adresses[0]['email']);
             $email->addAttribute('id', $eMailCounter);
             if (isset($this->adresses[0]['classifier'])) {
@@ -108,11 +107,12 @@ class Converter
         }
     }
 
-    /* delivers an array of prequalified phone numbers. This is neccesseary to
+    /**
+     * delivers an array of prequalified phone numbers. This is neccesseary to
      * handle the maximum of nine phone numbers per FRITZ!Box phonebook contacts
-     **/
-    private function getPhoneNumbers() {
-
+     */
+    private function getPhoneNumbers()
+    {
         $phoneNumbers = array();
 
         $replaceCharacters = $this->config['phoneReplaceCharacters'] ?? array();
@@ -179,13 +179,13 @@ class Converter
         return $phoneNumbers;
     }
 
-    /* delivers an array of prequalified email adresses. There is no limitation
+    /**
+     * delivers an array of prequalified email adresses. There is no limitation
      * for the amount of email adresses in FRITZ!Box phonebook contacts.
-     **/
-    private function getEmailAdresses() {
-
+     */
+    private function getEmailAdresses()
+    {
         $mailAdresses = array();
-
         $emailTypes = $this->config['emailTypes'] ?? array();
 
         if (isset($this->card->email)) {
