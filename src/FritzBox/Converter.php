@@ -76,7 +76,7 @@ class Converter
                 $phone->addAttribute('type', $this->numbers[0]['type']);
             }
             if (isset($this->numbers[0]['pref'])) {
-                $phone->addAttribute('pref', $this->numbers[0]['pref']);
+                $phone->addAttribute('prio', $this->numbers[0]['pref']);
             }
             if (isset($this->numbers[0]['quickdial'])) {
                 $phone->addAttribute('quickdial', $this->numbers[0]['quickdial']);
