@@ -95,7 +95,7 @@ function dissolveGroups (array $vcards): array
 
     foreach ($vcards as $key => $vcard) {          // separate iCloud groups
         if (isset($vcard->xabsmember)) {
-            if(array_key_exists($vcard->fullname, $groups)) {
+            if (array_key_exists($vcard->fullname, $groups)) {
                 $groups[$vcard->fullname] = array_merge($groups[$vcard->fullname], $vcard->xabsmember);
             } else {
                 $groups[$vcard->fullname] = $vcard->xabsmember;
