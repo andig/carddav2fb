@@ -12,18 +12,20 @@ class Converter
     private $imagePath;
     private $numbers;
     private $adresses;
-    private $uniqueDials = array();
+    private $uniqueDials = [];
+    private $phoneSort = [];
 
     public function __construct($config)
     {
         $this->config    = $config['conversions'];
         $this->imagePath = $config['phonebook']['imagepath'] ?? NULL;
+        $this->phoneSort = $this->getSortingData();
     }
 
     public function convert($card)
     {
         $this->card = $card;
-        $contacts = array();
+        $contacts = [];
 
         $this->numbers  = $this->getPhoneNumbers();                      // get array of prequalified phone numbers
         $this->adresses = $this->getEmailAdresses();                     // get array of prequalified email adresses
@@ -53,6 +55,19 @@ class Converter
             $contacts[] = $this->contact;
         }
         return $contacts;
+    }
+
+    /**
+     * returns a simple array depending on the order of phonetype conversions
+     * whose order should determine the sorting of the telephone numbers
+     */
+    private function getSortingData()
+    {
+        foreach ($this->config['phoneTypes'] as $idx => $value) {
+            $sortArr[] = strtolower($value);
+        }
+        $sortArr[] = 'other';                          // ensures that the default value is included
+        return array_unique($sortArr);                 // deletes duplicates
     }
 
     private function addVip()
@@ -113,7 +128,7 @@ class Converter
      */
     private function getPhoneNumbers()
     {
-        $phoneNumbers = array();
+        $phoneNumbers = [];
 
         $replaceCharacters = $this->config['phoneReplaceCharacters'] ?? array();
         $phoneTypes = $this->config['phoneTypes'] ?? array();
@@ -176,6 +191,22 @@ class Converter
                 }
             }
         }
+        if (count($phoneNumbers) > 1) {
+            $ordering = $this->phoneSort;
+            usort($phoneNumbers, function($a, $b) use ($ordering) {
+                $idx1 = array_search($a['type'], $ordering, true);
+                $idx2 = array_search($b['type'], $ordering, true);
+                if($idx1 == $idx2)
+                    if($a['number'] > $b['number'])
+                       return 1;
+                    else
+                       return -1;
+                    //return 0;      value before implementation of second query
+                elseif($idx1 < $idx2)
+                    return -1;
+                return 1;
+            });
+        }
         return $phoneNumbers;
     }
 
@@ -185,7 +216,7 @@ class Converter
      */
     private function getEmailAdresses()
     {
-        $mailAdresses = array();
+        $mailAdresses = [];
         $emailTypes = $this->config['emailTypes'] ?? array();
 
         if (isset($this->card->email)) {
