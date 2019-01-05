@@ -62,7 +62,7 @@ class RunCommand extends Command
         if ($input->getOption('image')) {
             error_log("Detaching and uploading image(s)");
             $pictures = uploadImages($filtered, $this->config['fritzbox']);
-            error_log(sprintf("Uploaded %d image file(s)", $pictures)); 
+            error_log(sprintf("Uploaded/refreshed %d of %d image file(s)", $pictures[0], $pictures[1])); 
         }
         else {
             unset($this->config['phonebook']['imagepath']);             // otherwise convert will set wrong links

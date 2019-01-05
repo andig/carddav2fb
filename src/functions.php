@@ -7,6 +7,8 @@ use Andig\Vcard\Parser;
 use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
 use \SimpleXMLElement;
+use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
  * Initialize backend from configuration
@@ -49,38 +51,57 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
  */
 function uploadImages(array $vcards, $config)
 {   
-    $options = array('ftp' => array('overwrite' => true));
-    $context = stream_context_create($options);
-    $i = 0;
-    
+    $countUploadedImages = 0;
+    $countAllImages = 0;    
+
+    // Prepare FTP connection
+    $ftpserver = $config['url'];
+    $ftpserver = str_replace("http://", "", $ftpserver);
+    $ftp_conn = ftp_connect($ftpserver);
+    if (!$ftp_conn) {
+        error_log("ERROR: Could not connect to ftp server ".$ftpserver." for image upload.");
+        return 0;
+    }
+    if (! ftp_login($ftp_conn, $config['user'], $config['password'])) {
+        error_log("ERROR: Could not log in ".$config['user']." to ftp server ".$ftpserver." for image upload.");
+        return 0;
+    } 
+    if (! ftp_chdir($ftp_conn, $config['fonpix'])){
+        error_log("ERROR: Could change to dir ".$config['fonpix']." on ftp server ".$ftpserver." for image upload.");
+        return 0;
+    } 
+    $progress = new ProgressBar(new ConsoleOutput());
+    $progress->start(count($vcards));
     foreach ($vcards as $vcard) {
+        $progress->advance();
         if (isset($vcard->rawPhoto)) {                                     // skip all other vCards
-            if (preg_match("/JPEG/", strtoupper($vcard->photoData))) {     // Fritz!Box only accept jpg-files
-                $imgFile = imagecreatefromstring($vcard->rawPhoto);
-                if ($imgFile !== false) {
-                    $ftp_destination = sprintf('ftp://%1$s:%2$s@%3$s/%4$s/%5$s.jpg',
-                        $config['user'], 
-                        $config['password'], 
-                        $config['url'], 
-                        $config['fonpix'],
-                        $vcard->uid
-                    );
-                    ob_start();
-                    imagejpeg($imgFile, null);
-                    $contents = ob_get_clean();
-                    if (@file_put_contents($ftp_destination, $contents, 0, $context) !== false) {
-                        $i++;
-                    }
-                    else {
-                        unset($vcard->rawPhoto);                           // no wrong link will set in phonebook
-                        error_log(sprintf("ftp access denied for %s.jpg to %s!", $vcard->uid, $config['fonpix']));
-                    }
-                    imagedestroy($imgFile);
+            if (preg_match("/JPEG/", strtoupper(substr($vcard->photoData, 0, 256)))) {     // Fritz!Box only accept jpg-files
+                $countAllImages++;
+                $remotefilename = sprintf('%1$s.jpg', $vcard->uid);
+                // We only upload if filesize differs. Non existing server file will have size -1
+                if (ftp_size($ftp_conn, $remotefilename) == strlen($vcard->rawPhoto)) {
+                    continue;
                 }
+                $memstream = fopen('php://memory', 'r+');     // we use a fast in-memory file stream
+                fputs($memstream, $vcard->rawPhoto);
+                rewind($memstream);
+
+                // upload file
+                if (ftp_fput($ftp_conn, $remotefilename, $memstream, FTP_BINARY)){
+                    $countUploadedImages++;
+                } else {
+                    echo "Error uploading $remotefilename.\n";
+                    unset($vcard->rawPhoto);                           // no wrong link will set in phonebook
+                }
+                fclose($memstream);
             }
         }
     }
-    return $i;
+    ftp_close($ftp_conn);
+    $progress->finish();
+    error_log("\n");
+
+    return array($countUploadedImages, $countAllImages);
 }
 
 /**
