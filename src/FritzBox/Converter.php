@@ -19,7 +19,7 @@ class Converter
     {
         $this->config    = $config['conversions'];
         $this->imagePath = $config['phonebook']['imagepath'] ?? NULL;
-        $this->phoneSort = $this->getNumberSequence();
+        $this->phoneSort = $this->getPhoneTypesSortOrder();
     }
 
     public function convert($card)
@@ -61,7 +61,7 @@ class Converter
      * returns a simple array depending on the order of phonetype conversions
      * whose order should determine the sorting of the telephone numbers
      */
-    private function getNumberSequence()
+    private function getPhoneTypesSortOrder()
     {
         $seqArr = array_values(array_map('strtolower', $this->config['phoneTypes']));
         $seqArr[] = 'other';                               // ensures that the default value is included
@@ -196,7 +196,7 @@ class Converter
                 if ($idx1 == $idx2)
                     return ($a['number'] > $b['number']) ? 1 : -1;
                 else
-                    return ($idx1 < $idx2) ? -1 : +1;
+                    return ($idx1 > $idx2) ? 1 : -1;
             });
         }
         return $phoneNumbers;
