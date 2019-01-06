@@ -190,15 +190,13 @@ class Converter
             }
         }
         if (count($phoneNumbers) > 1) {
-            $ordering = $this->phoneSort;
-            usort($phoneNumbers, function($a, $b) use ($ordering) {
-                $idx1 = array_search($a['type'], $ordering, true);
-                $idx2 = array_search($b['type'], $ordering, true);
+            usort($phoneNumbers, function($a, $b) {
+                $idx1 = array_search($a['type'], $this->phoneSort, true);
+                $idx2 = array_search($b['type'], $this->phoneSort, true);
                 if ($idx1 == $idx2)
                     return ($a['number'] > $b['number']) ? 1 : -1;
-                elseif ($idx1 < $idx2)
-                    return -1;
-                return 1;
+                else
+                    return ($idx1 < $idx2) ? -1 : +1;
             });
         }
         return $phoneNumbers;
