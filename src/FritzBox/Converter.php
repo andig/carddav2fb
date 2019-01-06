@@ -9,7 +9,7 @@ class Converter
 
 {
     private $config;
-    private $imagePath;
+    private $configImagePath;
     private $numbers;
     private $adresses;
     private $uniqueDials = [];
@@ -18,7 +18,7 @@ class Converter
     public function __construct($config)
     {
         $this->config    = $config['conversions'];
-        $this->imagePath = $config['phonebook']['imagepath'] ?? NULL;
+        $this->configImagePath = $config['phonebook']['imagepath'] ?? NULL;
         $this->phoneSort = $this->getPhoneTypesSortOrder();
     }
 
@@ -39,9 +39,9 @@ class Converter
             $name = htmlspecialchars($this->getProperty('realName'));
             $person->addChild('realName', $name);
             // add photo
-            if (isset($this->card->rawPhoto)) {
-                if (isset($this->imagePath)) {
-                    $person->addChild('imageURL', $this->imagePath . $this->card->uid . '.jpg');
+            if (isset($this->card->rawPhoto) && isset($this->card->imageURL)) {
+                if (isset($this->configImagePath)) {
+                    $person->addChild('imageURL', $this->card->imageURL);
                 }
             }
             // add Phone
