@@ -19,7 +19,7 @@ class Converter
     {
         $this->config    = $config['conversions'];
         $this->imagePath = $config['phonebook']['imagepath'] ?? NULL;
-        $this->phoneSort = $this->getSortingData();
+        $this->phoneSort = $this->getNumberSequence();
     }
 
     public function convert($card)
@@ -61,13 +61,11 @@ class Converter
      * returns a simple array depending on the order of phonetype conversions
      * whose order should determine the sorting of the telephone numbers
      */
-    private function getSortingData()
+    private function getNumberSequence()
     {
-        foreach ($this->config['phoneTypes'] as $idx => $value) {
-            $sortArr[] = strtolower($value);
-        }
-        $sortArr[] = 'other';                          // ensures that the default value is included
-        return array_unique($sortArr);                 // deletes duplicates
+        $seqArr = array_values(array_map('strtolower', $this->config['phoneTypes']));
+        $seqArr[] = 'other';                               // ensures that the default value is included
+        return array_unique($seqArr);                      // deletes duplicates
     }
 
     private function addVip()
@@ -196,13 +194,9 @@ class Converter
             usort($phoneNumbers, function($a, $b) use ($ordering) {
                 $idx1 = array_search($a['type'], $ordering, true);
                 $idx2 = array_search($b['type'], $ordering, true);
-                if($idx1 == $idx2)
-                    if($a['number'] > $b['number'])
-                       return 1;
-                    else
-                       return -1;
-                    //return 0;      value before implementation of second query
-                elseif($idx1 < $idx2)
+                if ($idx1 == $idx2)
+                    return ($a['number'] > $b['number']) ? 1 : -1;
+                elseif ($idx1 < $idx2)
                     return -1;
                 return 1;
             });
