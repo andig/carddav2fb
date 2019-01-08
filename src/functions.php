@@ -40,33 +40,6 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
     return $backend->getVcards();
 }
 
-
-
-/**
- * checks if preconditions for upload images are OK
- *
- * @return            mixed     (true if all preconditions OK, error string otherwise)
- */
-function uploadImagePreconditionsOK($configFritz, $configPhonebook)
-{
-    if (!function_exists("ftp_connect")) {
-        return ("ERROR: FTP functions not available in your PHP installation.\n".
-                "       Image upload not possible (remove -i switch)\n".
-                "       Ensure PHP was installed with --enable-ftp\n".
-                "       Ensure php.ini does not list ftp_* functions in 'disable_functions'\n".
-                "       In shell run: php -r \"phpinfo();\" | grep FTP");
-    }
-    if (!$configFritz['fonpix']) {
-        return ("ERROR: config.php missing fritzbox/fonpix setting.\n".
-                "       Image upload not possible (remove -i switch).");
-    }
-    if (!$configPhonebook['imagepath']) {
-        return ("ERROR: config.php missing phonebook/imagepath setting.\n".
-                "       Image upload not possible (remove -i switch).");
-    }
-    return true;
-}
-
 /**
  * upload image files via ftp to the fritzbox fonpix directory
  *
