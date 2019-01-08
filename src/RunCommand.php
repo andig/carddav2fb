@@ -27,10 +27,19 @@ class RunCommand extends Command
     {
         $this->loadConfig($input);
 
+        // we want to check for image upload show stoppers as early as possible
+        if ($input->getOption('image')) {
+            $precresult = uploadImagePreconditionsOK($this->config['fritzbox'], $this->config['phonebook']);
+            if ($precresult !== true) {
+                error_log($precresult."\n");
+                return(21);                     // error code to evaluate by shell
+            }
+        }
+
         $vcards = array();
         $xcards = array();
         $substitutes = ($input->getOption('image')) ? ['PHOTO'] : [];
-        
+
         foreach ($this->config['server'] as $server) {
             $progress = new ProgressBar($output);
             error_log("Downloading vCard(s) from account ".$server['user']);
