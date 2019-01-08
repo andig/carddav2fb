@@ -142,7 +142,7 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
  * @param array $cards
  * @return array
  */
-function dissolveGroups (array $vcards): array
+function dissolveGroups(array $vcards): array
 {
     $groups = [];
 
@@ -193,8 +193,7 @@ function filter(array $cards, array $filters): array
                 $step1[] = $card;
             }
         }
-    }
-    else {
+    } else {
         // filter defined but empty sub-rules?
         if (count($includeFilter)) {
             error_log('Include filter empty- including all cards');

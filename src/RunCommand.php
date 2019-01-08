@@ -30,14 +30,14 @@ class RunCommand extends Command
         $vcards = array();
         $xcards = array();
         $substitutes = ($input->getOption('image')) ? ['PHOTO'] : [];
-
-        foreach($this->config['server'] as $server) {
+        
+        foreach ($this->config['server'] as $server) {
             $progress = new ProgressBar($output);
             error_log("Downloading vCard(s) from account ".$server['user']);
 
             $backend = backendProvider($server);
             $progress->start();
-            $xcards = download ($backend, $substitutes, function () use ($progress) {
+            $xcards = download($backend, $substitutes, function () use ($progress) {
                 $progress->advance();
             });
             $progress->finish();
@@ -70,8 +70,7 @@ class RunCommand extends Command
                 error_log(sprintf("Uploaded/refreshed %d of %d image file(s)", $pictures[0], $pictures[1]));
             }
             $imgProgress->finish();
-        }
-        else {
+        } else {
             unset($this->config['phonebook']['imagepath']);             // otherwise convert will set wrong links
         }
 

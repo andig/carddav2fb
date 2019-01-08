@@ -10,10 +10,6 @@ use Andig\Vcard\Parser;
 /**
  * @author Christian Putzke <christian.putzke@graviox.de>
  * @copyright Christian Putzke
- * @link http://www.graviox.de/
- * @link https://twitter.com/cputzke/
- * @since 24.05.2015
- * @version 0.7
  * @license http://www.gnu.org/licenses/agpl.html GNU AGPL v3 or later
  */
 
@@ -77,7 +73,8 @@ class Backend
      *
      * @param   string  $url    CardDAV server url
      */
-    public function __construct(string $url=null) {
+    public function __construct(string $url=null)
+    {
         if ($url) {
             $this->setUrl($url);
         }
@@ -244,11 +241,10 @@ class Backend
 
         if (200 !== $response->getStatusCode()) {
             throw new \Exception('Received HTTP ' . $response->getStatusCode());
-        }
-        else {
+        } else {
             $contentType = $response->getHeader('Content-Type');
 
-            @list($mimeType,$parameters) = explode(';', $contentType[0], 2);
+            @list($mimeType, $parameters) = explode(';', $contentType[0], 2);
             @list($type, $subType) = explode('/', $mimeType);
 
             $externalData = [
