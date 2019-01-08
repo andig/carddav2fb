@@ -45,14 +45,14 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
  *
  * @param $vcards     array     downloaded vCards
  * @param $config     array
- * @return            array     false or [number of uploaded images, number of total found images]
+ * @return            mixed     false or [number of uploaded images, number of total found images]
  */
 function uploadImages(array $vcards, $config, $configPhonebook, callable $callback=null)
 {
     $countUploadedImages = 0;
     $countAllImages = 0;
-    $mapFTPUIDtoFTPImageName = [];  // 9e40f1f9-33df-495d-90fe-3a1e23374762 => 9e40f1f9-33df-495d-90fe-3a1e23374762_abcdefghij.jpg
-    $timestampPostfix = substr(date("YmdHis"), 2);    // timestamp, e.g., 190106123906
+    $mapFTPUIDtoFTPImageName = [];                      // "9e40f1f9-33df-495d-90fe-3a1e23374762" => "9e40f1f9-33df-495d-90fe-3a1e23374762_190106123906.jpg"
+    $timestampPostfix = substr(date("YmdHis"), 2);      // timestamp, e.g., 190106123906
     $configImagepath = $configPhonebook['imagepath'] ?? NULL;
     if (!$configImagepath) {
         error_log("ERROR: No image upload possible. Missing phonebook/imagepath in config.");
@@ -72,15 +72,15 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
         error_log("ERROR: Could not log in ".$config['user']." to ftp server ".$ftpserver." for image upload.");
         return false;
     }
-    if (!ftp_chdir($ftp_conn, $config['fonpix'])){
-        error_log("ERROR: Could change to dir ".$config['fonpix']." on ftp server ".$ftpserver." for image upload.");
+    if (!ftp_chdir($ftp_conn, $config['fonpix'])) {
+        error_log("ERROR: Could not change to dir ".$config['fonpix']." on ftp server ".$ftpserver." for image upload.");
         return false;
     }
 
     // Build up dictionary to look up UID => current FTP image file
     $ftpFiles = ftp_nlist($ftp_conn, ".");
-    if (!$ftpFiles){
-        error_log("ERROR: Could list dir ".$config['fonpix']." on ftp server ".$ftpserver." for image upload.");
+    if (!$ftpFiles) {
+        error_log("ERROR: Could not list dir ".$config['fonpix']." on ftp server ".$ftpserver." for image upload.");
         return false;
     }
     foreach ($ftpFiles as $ftpFile) {
@@ -108,7 +108,7 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
                         continue;
                     }
                     // we already have an old image, but the new image differs in size
-                    ftp_delete ($ftp_conn, $currentFTPimage);
+                    ftp_delete($ftp_conn, $currentFTPimage);
                 }
 
                 // Upload new image file
@@ -117,7 +117,7 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
                 rewind($memstream);
 
                 // upload new image
-                if (ftp_fput($ftp_conn, $newFTPimage, $memstream, FTP_BINARY)){
+                if (ftp_fput($ftp_conn, $newFTPimage, $memstream, FTP_BINARY)) {
                     $countUploadedImages++;
                     // upload of new image done, now store new image URL in vCard (new Random Postfix!)
                     $vcard->imageURL = $configImagepath . $newFTPimage;
