@@ -8,6 +8,9 @@ use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
 use \SimpleXMLElement;
 
+global $MAX_IMAGE_COUNT;
+$MAX_IMAGE_COUNT = 150;      // see: https://avm.de/service/fritzbox/fritzbox-7490/wissensdatenbank/publication/show/300_Hintergrund-und-Anruferbilder-in-FRITZ-Fon-einrichten/
+
 /**
  * Initialize backend from configuration
  *
@@ -49,7 +52,8 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
  */
 function uploadImages(array $vcards, $config, $configPhonebook, callable $callback=null)
 {
-    $MAX_IMAGE_COUNT = 150;      // see: https://avm.de/service/fritzbox/fritzbox-7490/wissensdatenbank/publication/show/300_Hintergrund-und-Anruferbilder-in-FRITZ-Fon-einrichten/
+    global $MAX_IMAGE_COUNT;
+
     $countUploadedImages = 0;
     $countAllImages = 0;
     $mapFTPUIDtoFTPImageName = [];                      // "9e40f1f9-33df-495d-90fe-3a1e23374762" => "9e40f1f9-33df-495d-90fe-3a1e23374762_190106123906.jpg"
