@@ -55,7 +55,7 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
     $timestampPostfix = substr(date("YmdHis"), 2);      // timestamp, e.g., 190106123906
     $configImagepath = $configPhonebook['imagepath'] ?? NULL;
     if (!$configImagepath) {
-        error_log("\nERROR: No image upload possible. Missing phonebook/imagepath in config.");
+        error_log(PHP_EOL."ERROR: No image upload possible. Missing phonebook/imagepath in config.");
         return false;
     }
     $configImagepath = rtrim($configImagepath, '/') . '/';  // ensure one slash at end
@@ -65,15 +65,15 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
     $ftpserver = str_replace("http://", "", $ftpserver);    // config.example.php has http:// which breaks FTP connect
     $ftp_conn = ftp_connect($ftpserver);
     if (!$ftp_conn) {
-        error_log("\nERROR: Could not connect to ftp server ".$ftpserver." for image upload.");
+        error_log(PHP_EOL."ERROR: Could not connect to ftp server ".$ftpserver." for image upload.");
         return false;
     }
     if (!ftp_login($ftp_conn, $config['user'], $config['password'])) {
-        error_log("\nERROR: Could not log in ".$config['user']." to ftp server ".$ftpserver." for image upload.");
+        error_log(PHP_EOL."ERROR: Could not log in ".$config['user']." to ftp server ".$ftpserver." for image upload.");
         return false;
     }
     if (!ftp_chdir($ftp_conn, $config['fonpix'])) {
-        error_log("\nERROR: Could not change to dir ".$config['fonpix']." on ftp server ".$ftpserver." for image upload.");
+        error_log(PHP_EOL."ERROR: Could not change to dir ".$config['fonpix']." on ftp server ".$ftpserver." for image upload.");
         return false;
     }
 
@@ -121,7 +121,7 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
                     // upload of new image done, now store new image URL in vCard (new Random Postfix!)
                     $vcard->imageURL = $configImagepath . $newFTPimage;
                 } else {
-                    error_log("Error uploading $newFTPimage.\n");
+                    error_log("Error uploading $newFTPimage.".PHP_EOL);
                     unset($vcard->rawPhoto);                           // no wrong link will set in phonebook
                     unset($vcard->imageURL);                           // no wrong link will set in phonebook
                 }
@@ -130,7 +130,7 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
         }
     }
     ftp_close($ftp_conn);
-    error_log("\n");
+    error_log(PHP_EOL);
 
     return array($countUploadedImages, $countAllImages);
 }
