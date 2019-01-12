@@ -8,8 +8,7 @@ use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
 use \SimpleXMLElement;
 
-global $MAX_IMAGE_COUNT;
-$MAX_IMAGE_COUNT = 150;      // see: https://avm.de/service/fritzbox/fritzbox-7490/wissensdatenbank/publication/show/300_Hintergrund-und-Anruferbilder-in-FRITZ-Fon-einrichten/
+define("MAX_IMAGE_COUNT", 150); // see: https://avm.de/service/fritzbox/fritzbox-7490/wissensdatenbank/publication/show/300_Hintergrund-und-Anruferbilder-in-FRITZ-Fon-einrichten/
 
 /**
  * Initialize backend from configuration
@@ -52,8 +51,6 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
  */
 function uploadImages(array $vcards, $config, $configPhonebook, callable $callback=null)
 {
-    global $MAX_IMAGE_COUNT;
-
     $countUploadedImages = 0;
     $countAllImages = 0;
     $mapFTPUIDtoFTPImageName = [];                      // "9e40f1f9-33df-495d-90fe-3a1e23374762" => "9e40f1f9-33df-495d-90fe-3a1e23374762_190106123906.jpg"
@@ -137,9 +134,9 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
     ftp_close($ftp_conn);
 
     error_log(PHP_EOL);
-    if ($countAllImages > $MAX_IMAGE_COUNT) {
+    if ($countAllImages > MAX_IMAGE_COUNT) {
         error_log("WARNING: You have ".$countAllImages." contact images on FritzBox");
-        error_log("         FritzFon may handle only up to ".$MAX_IMAGE_COUNT." images.");
+        error_log("         FritzFon may handle only up to ".MAX_IMAGE_COUNT." images.");
         error_log("         (see: https://github.com/andig/carddav2fb/issues/92)");
         error_log("         Some images may not display properly.");
         error_log("");
