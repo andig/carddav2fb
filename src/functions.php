@@ -56,10 +56,6 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
     $mapFTPUIDtoFTPImageName = [];                      // "9e40f1f9-33df-495d-90fe-3a1e23374762" => "9e40f1f9-33df-495d-90fe-3a1e23374762_190106123906.jpg"
     $timestampPostfix = substr(date("YmdHis"), 2);      // timestamp, e.g., 190106123906
     $configImagepath = $configPhonebook['imagepath'] ?? NULL;
-    if (!$configImagepath) {
-        error_log(PHP_EOL."ERROR: No image upload possible. Missing phonebook/imagepath in config.");
-        return false;
-    }
     $configImagepath = rtrim($configImagepath, '/') . '/';  // ensure one slash at end
 
     // Prepare FTP connection
