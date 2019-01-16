@@ -370,9 +370,8 @@ function upload(string $xml, $config)
         )
     );
 
-    $result = $fritz->doPostFile($formfields, $filefields); // send the command
-
-    if (strpos($result, 'Das Telefonbuch der FRITZ!Box wurde wiederhergestellt') === false) {
-        throw new \Exception('Upload failed');
-    }
+    $result = $fritz->postFile($formfields, $filefields);
+    if ($result != 200) {
+        throw new \Exception(sprintf('Error: %s! Upload failed', $result));
+    }   
 }

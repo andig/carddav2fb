@@ -35,104 +35,48 @@ class Api
 
     /**
      * do a POST request on the box
-     * the main cURL wrapper handles the command
      *
      * @param  array  $formfields    an associative array with the POST fields to pass
-     * @return string                the raw HTML code returned by the Fritz!Box
+     * @return int                   the HTTP status code returned by the Fritz!Box
      */
-    public function doPostForm($formfields = array())
-    {
-        $ch = curl_init();
-
-        if (isset($formfields['getpage']) && strpos($formfields['getpage'], '.lua') > 0) {
-            curl_setopt($ch, CURLOPT_URL, $this->url . $formfields['getpage'] . '?sid=' . $this->sid);
-            unset($formfields['getpage']);
-        } else {
-            // add the sid, if it is already set
-            if ($this->sid != '0000000000000000') {
-                $formfields['sid'] = $this->sid;
-            }
-            curl_setopt($ch, CURLOPT_URL, $this->url . '/cgi-bin/webcm');
+    function postFile(array $formFields, array $fileFields) {
+        
+        $client = new \GuzzleHttp\Client();
+        $multipart = [];
+    
+        // sid must be first parameter
+        $formFields = array_merge(array('sid' => $this->sid), $formFields);
+    
+        foreach ($formFields as $key => $val) {
+            $multipart[] = [
+                'name' => $key,
+                'contents' => $val,
+            ];
         }
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($formfields));
-        $output = curl_exec($ch);
-        curl_close($ch);
-        return $output;
+    
+        foreach ($fileFields as $name => $file) {
+            $multipart[] = [
+                'name' => $name,
+                'filename' => $file['filename'],
+                'contents' => $file['content'],
+                'headers' => [
+                    'Content-Type' => $file['type'],
+                ],
+            ];
+    
+        }
+    
+        $url = $this->url . '/cgi-bin/firmwarecfg';
+        $response = $client->request('POST', $url, [
+            'multipart' => $multipart,
+        ]);
+        return $response->getStatusCode();
     }
-
-    public function doPostFile($formfields = array(), $filefileds = array())
-    {
-        $ch = curl_init();
-
-        // add the sid, if it is already set
-        if ($this->sid != '0000000000000000') {
-            // 'sid' MUST be the first POST variable!!! (otherwise it will not work!!)
-            // therfore we use array_merge to ensuere the foreach outputs 'sid' fist
-            $formfields = array_merge(array('sid' => $this->sid), $formfields);
-            //$formfields['sid'] = $this->sid;
-        }
-        curl_setopt($ch, CURLOPT_URL, $this->url . '/cgi-bin/firmwarecfg');
-        curl_setopt($ch, CURLOPT_POST, 1);
-
-        // enable for debugging:
-        //curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-        // if filefileds not specified ('@/path/to/file.xml;type=text/xml' works fine)
-        if (empty($filefileds)) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $formfields); // http_build_query
-        }
-        // post calculated raw data
-        else {
-            $header = $this->_create_custom_file_post_header($formfields, $filefileds);
-            curl_setopt(
-                $ch,
-                CURLOPT_HTTPHEADER,
-                array(
-                'Content-Type: multipart/form-data; boundary=' . $header['delimiter'], 'Content-Length: ' . strlen($header['data']) )
-                );
-
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $header['data']);
-        }
-
-        $output = curl_exec($ch);
-
-        // curl error
-        if (curl_errno($ch)) {
-            throw new \Exception(curl_error($ch)." (".curl_errno($ch).")");
-        }
-
-        // finger out an error message, if given
-        preg_match('@<p class="ErrorMsg">(.*?)</p>@is', $output, $matches);
-        if (isset($matches[1])) {
-            throw new \Exception(str_replace('&nbsp;', ' ', $matches[1]));
-        }
-
-        curl_close($ch);
-        return $output;
-    }
-
+    
     private function _create_custom_file_post_header($postFields, $fileFields)
     {
         // form field separator
         $delimiter = '-------------' . uniqid();
-
-        /*
-            // file upload fields: name => array(type=>'mime/type',content=>'raw data')
-            $fileFields = array(
-                'file1' => array(
-                    'type' => 'text/xml',
-                    'content' => '...your raw file content goes here...',
-                    'filename' = 'filename.xml'
-                ),
-            );
-            // all other fields (not file upload): name => value
-            $postFields = array(
-                'otherformfield'   => 'content of otherformfield is this text',
-            );
-         */
 
         $data = '';
 
