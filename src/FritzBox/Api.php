@@ -121,7 +121,8 @@ class Api
     }
 
     /**
-     * Login, throws on failure
+     * returns a valid SID or throws on failure
+     * https://avm.de/fileadmin/user_upload/Global/Service/Schnittstellen/AVM_Technical_Note_-_Session_ID.pdf
      *
      * @throws Exception
      */
