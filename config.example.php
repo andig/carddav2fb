@@ -31,6 +31,7 @@ $config = [
         'user' => '',
         'password' => '',
         'fonpix'   => '/[YOURUSBSTICK]/FRITZ/fonpix',   // the storage on your usb stick for uploading images
+        'useFTPS' => true,   // try and use ftps protocol for image upload
     ],
 
     'filters' => [

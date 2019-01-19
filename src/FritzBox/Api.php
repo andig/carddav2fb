@@ -97,6 +97,9 @@ class Api
             curl_setopt($ch, CURLOPT_POSTFIELDS, $header['data']);
         }
 
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
         $output = curl_exec($ch);
 
         // curl error
@@ -189,7 +192,7 @@ class Api
         $url = $this->url . $getpage . http_build_query($params);
 
         $this->client = $this->client ?? new Client();
-        $response = $this->client->send(new Request('GET', $url));
+        $response = $this->client->send(new Request('GET', $url), ['verify' => false]);
 
         if (200 !== $response->getStatusCode()) {
             throw new \Exception('Received HTTP ' . $response->getStatusCode());

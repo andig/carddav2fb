@@ -63,9 +63,12 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
     $configImagepath = rtrim($configImagepath, '/') . '/';  // ensure one slash at end
 
     // Prepare FTP connection
-    $ftpserver = $config['url'];
-    $ftpserver = str_replace("http://", "", $ftpserver);    // config.example.php has http:// which breaks FTP connect
-    $ftp_conn = ftp_connect($ftpserver);
+    $ftpserver = (parse_url($config['url'], PHP_URL_HOST) ? parse_url($config['url'], PHP_URL_HOST) : $config['url']);
+    if (isset($config['useFTPS']) && $config['useFTPS']) {
+        $ftp_conn = ftp_ssl_connect($ftpserver);
+    } else {
+        $ftp_conn = ftp_connect($ftpserver);
+    }
     if (!$ftp_conn) {
         error_log(PHP_EOL."ERROR: Could not connect to ftp server ".$ftpserver." for image upload.");
         return false;
@@ -133,7 +136,6 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
     }
     ftp_close($ftp_conn);
 
-    error_log(PHP_EOL);
     if ($countAllImages > MAX_IMAGE_COUNT) {
         error_log("WARNING: You have ".$countAllImages." contact images on FritzBox");
         error_log("         FritzFon may handle only up to ".MAX_IMAGE_COUNT." images.");
