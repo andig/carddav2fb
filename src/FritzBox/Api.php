@@ -121,8 +121,11 @@ class Api
     }
 
     /**
-     * Login, throws on failure
-     *
+     * returns a Session ID (ID) login, throws on failure
+     * following the AVM technical concept: 
+     * https://avm.de/fileadmin/user_upload/Global/Service/Schnittstellen/Session-ID_english_13Nov18.pdf
+     * https://avm.de/fileadmin/user_upload/Global/Service/Schnittstellen/AVM_Technical_Note_-_Session_ID.pdf
+     * 
      * @throws Exception
      */
     protected function initSID()
