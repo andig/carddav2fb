@@ -64,11 +64,13 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
 
     // Prepare FTP connection
     $ftpserver = (parse_url($config['url'], PHP_URL_HOST) ? parse_url($config['url'], PHP_URL_HOST) : $config['url']);
-    if (isset($config['useFTPS']) && $config['useFTPS']) {
-        $ftp_conn = ftp_ssl_connect($ftpserver);
-    } else {
-        $ftp_conn = ftp_connect($ftpserver);
-    }
+    $useFTPS = true;                                                                                                                                                                                           
+    if (isset($config['usePlainFTP']) && $config['usePlainFTP']) { $useFTPS =  false; }                                                                                                                        
+    if (!function_exists("ftp_ssl_connect")) {
+        error_log(PHP_EOL."WARNING: Falling back to plain text ftp.");
+        $useFTPS =  false;
+    }                                                                                                                                                                                                          
+    $ftp_conn  = ($useFTPS ? ftp_ssl_connect($ftpserver) : ftp_connect($ftpserver));
     if (!$ftp_conn) {
         error_log(PHP_EOL."ERROR: Could not connect to ftp server ".$ftpserver." for image upload.");
         return false;
