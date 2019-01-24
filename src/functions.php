@@ -128,7 +128,7 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
                     // upload of new image done, now store new image URL in vCard (new Random Postfix!)
                     $vcard->imageURL = $configImagepath . $newFTPimage;
                 } else {
-                    error_log("Error uploading $newFTPimage.".PHP_EOL);
+                    error_log(PHP_EOL."Error uploading $newFTPimage.");
                     unset($vcard->rawPhoto);                           // no wrong link will set in phonebook
                     unset($vcard->imageURL);                           // no wrong link will set in phonebook
                 }
@@ -139,11 +139,11 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
     ftp_close($ftp_conn);
 
     if ($countAllImages > MAX_IMAGE_COUNT) {
-        error_log("WARNING: You have ".$countAllImages." contact images on FritzBox");
-        error_log("         FritzFon may handle only up to ".MAX_IMAGE_COUNT." images.");
-        error_log("         (see: https://github.com/andig/carddav2fb/issues/92)");
-        error_log("         Some images may not display properly.");
-        error_log("");
+        error_log(PHP_EOL."WARNING: You have ".$countAllImages." contact images on FritzBox");
+        error_log(PHP_EOL."         FritzFon may handle only up to ".MAX_IMAGE_COUNT." images.");
+        error_log(PHP_EOL."         (see: https://github.com/andig/carddav2fb/issues/92)");
+        error_log(PHP_EOL."         Some images may not display properly.");
+        error_log(PHP_EOL."");
     }
 
     return array($countUploadedImages, $countAllImages);
