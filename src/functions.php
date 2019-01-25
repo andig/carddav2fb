@@ -67,7 +67,7 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
     $useFTPS = true;
     if (isset($config['usePlainFTP']) && $config['usePlainFTP']) { $useFTPS =  false; }
     if (!function_exists("ftp_ssl_connect")) {
-        error_log(PHP_EOL."WARNING: Falling back to plain text ftp.");
+        error_log(PHP_EOL."WARNING: PHP build lacks support for 'ftp_ssl_connect', falling back to plain text ftp.");
         $useFTPS =  false;
     }
     $ftp_conn  = ($useFTPS ? ftp_ssl_connect($ftpserver) : ftp_connect($ftpserver));
