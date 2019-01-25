@@ -31,6 +31,7 @@ $config = [
         'user' => '',
         'password' => '',
         'fonpix'   => '/[YOURUSBSTICK]/FRITZ/fonpix',   // the storage on your usb stick for uploading images
+	'suppressSSLCertCheck' => false, // set to true if you want to ignore certifcate errors when accessing fritzbox via https (e.g. when using self-sigend certificate)
         //'usePlainFTP' => true, // uncomment this line if you want to disable ftps for image upload and switch to plaintext (insecure!) ftp
     ],
 

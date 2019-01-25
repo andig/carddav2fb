@@ -15,6 +15,7 @@ class Api
     private $username;
     private $password;
     private $url;
+    private $ignoreCertErr;
 
     protected $sid = '0000000000000000';
 
@@ -30,11 +31,12 @@ class Api
      *
      * @access public
      */
-    public function __construct($url = 'https://fritz.box', $username = false, $password = false)
+    public function __construct($url = 'https://fritz.box', $username = false, $password = false, $ignoreCertErr = false)
     {
         $this->url = rtrim($url, '/');
         $this->username = $username;
         $this->password = $password;
+        $this->ignoreCertErr = $ignoreCertErr;
 
         $this->initSID();
     }
@@ -57,7 +59,8 @@ class Api
     private function getClient(): Client
     {
         if (!$this->client) {
-            $this->client = new Client($this->getClientOptions(['verify' => false]));
+            $clientOpt = ($this->ignoreCertErr ? array('verify' => false) : array());
+            $this->client = new Client($this->getClientOptions($clientOpt));
         }
 
         return $this->client;
