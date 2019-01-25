@@ -64,12 +64,12 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
 
     // Prepare FTP connection
     $ftpserver = (parse_url($config['url'], PHP_URL_HOST) ? parse_url($config['url'], PHP_URL_HOST) : $config['url']);
-    $useFTPS = true;                                                                                                                                                                                           
-    if (isset($config['usePlainFTP']) && $config['usePlainFTP']) { $useFTPS =  false; }                                                                                                                        
+    $useFTPS = true;
+    if (isset($config['usePlainFTP']) && $config['usePlainFTP']) { $useFTPS =  false; }
     if (!function_exists("ftp_ssl_connect")) {
         error_log(PHP_EOL."WARNING: Falling back to plain text ftp.");
         $useFTPS =  false;
-    }                                                                                                                                                                                                          
+    }
     $ftp_conn  = ($useFTPS ? ftp_ssl_connect($ftpserver) : ftp_connect($ftpserver));
     if (!$ftp_conn) {
         error_log(PHP_EOL."ERROR: Could not connect to ftp server ".$ftpserver." for image upload.");
@@ -139,11 +139,14 @@ function uploadImages(array $vcards, $config, $configPhonebook, callable $callba
     ftp_close($ftp_conn);
 
     if ($countAllImages > MAX_IMAGE_COUNT) {
-        error_log(PHP_EOL."WARNING: You have ".$countAllImages." contact images on FritzBox");
-        error_log(PHP_EOL."         FritzFon may handle only up to ".MAX_IMAGE_COUNT." images.");
-        error_log(PHP_EOL."         (see: https://github.com/andig/carddav2fb/issues/92)");
-        error_log(PHP_EOL."         Some images may not display properly.");
-        error_log(PHP_EOL."");
+        $maxImgCount = MAX_IMAGE_COUNT;
+        error_log(PHP_EOL.<<<MAXCOUNTWARNING
+WARNING: You have $countAllImages contact images on FritzBox.
+         FritzFon may handle only up to $maxImgCount images.
+         (see: https://github.com/andig/carddav2fb/issues/92)
+         Some images may not display properly.
+MAXCOUNTWARNING
+        );
     }
 
     return array($countUploadedImages, $countAllImages);
@@ -360,7 +363,7 @@ function upload(string $xml, $config)
 {
     $fritzbox = $config['fritzbox'];
 
-    $fritz = new Api($fritzbox['url'], $fritzbox['user'], $fritzbox['password']);
+    $fritz = new Api($fritzbox['url'], $fritzbox['user'], $fritzbox['password'], isset($fritzbox['suppressSSLCertCheck']) && $fritzbox['suppressSSLCertCheck']);
 
     $formfields = array(
         'PhonebookId' => $config['phonebook']['id']
