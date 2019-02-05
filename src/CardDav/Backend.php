@@ -190,7 +190,7 @@ class Backend
      */
     public function getVcard(string $vcard_id): stdClass
     {
-        $id = rtrim($vcard_id, $this->vcard_extension) . $this->vcard_extension;
+        $id = (preg_match('/.vcf/', $vcard_id)) ? $vcard_id : $vcard_id . $this->vcard_extension;
         $response = $this->getClient()->request('GET', $this->url . $id);
 
         $body = (string)$response->getBody();
