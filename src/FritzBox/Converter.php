@@ -36,37 +36,43 @@ class Converter
      */
     public function convert(stdClass $card)
     {
-        $numbers  = $this->getPhoneNumbers($card);  // get array of prequalified phone numbers
-        $adresses = $this->getEmailAdresses($card); // get array of prequalified email adresses
-
+        $numbers  = $this->getPhoneNumbers($card);    // get array of prequalified phone numbers
         if (!count($numbers)) {
             return null;
         }
 
-        $this->contact = new SimpleXMLElement('<contact />');
-        $this->contact->addChild('carddav_uid', $card->uid);    // reference for image upload
+        $contacts = [];
+        $adresses = $this->getEmailAdresses($card);   // get array of prequalified email adresses
 
-        $this->addVip($card);
-        $this->addPhone($numbers);
+        $numberArrays = array_chunk($numbers, 9);
 
-        // add eMail
-        if (count($adresses)) {
-            $this->addEmail($adresses);
-        }
+        foreach ($numberArrays as $numberArray) {
+            $this->contact = new SimpleXMLElement('<contact />');
+            $this->contact->addChild('carddav_uid', $card->uid);    // reference for image upload
 
-        // add Person
-        $person = $this->contact->addChild('person');
-        $realName = htmlspecialchars($this->getProperty($card, 'realName'));
-        $person->addChild('realName', $realName);
+            $this->addVip($card);
+            $this->addPhone($numberArray);
 
-        // add photo
-        if (isset($card->rawPhoto) && isset($card->imageURL)) {
-            if (isset($this->configImagePath)) {
-                $person->addChild('imageURL', $card->imageURL);
+            // add eMail
+            if (count($adresses) && $numberArray = 0) {             // only into the first chunk
+                $this->addEmail($adresses);
             }
+
+            // add Person
+            $person = $this->contact->addChild('person');
+            $realName = htmlspecialchars($this->getProperty($card, 'realName'));
+            $person->addChild('realName', $realName);
+
+            // add photo
+            if (isset($card->rawPhoto) && isset($card->imageURL)) {
+                if (isset($this->configImagePath)) {
+                    $person->addChild('imageURL', $card->imageURL);
+                }
+            }
+            $contacts[] = $this->contact;
         }
 
-        return $this->contact;
+        return $contacts;
     }
 
     /**
@@ -94,11 +100,10 @@ class Converter
     private function addPhone(array $numbers)
     {
         $telephony = $this->contact->addChild('telephony');
-        $phoneCounter = 0;
-
-        foreach ($numbers as $number) {
+        
+        foreach ($numbers as $id => $number) {
             $phone = $telephony->addChild('number', $number['number']);
-            $phone->addAttribute('id', (string)$phoneCounter);
+            $phone->addAttribute('id', (string)$id);
 
             foreach (['type', 'quickdial', 'vanity'] as $attribute) {
                 if (isset($number[$attribute])) {
@@ -106,11 +111,6 @@ class Converter
                     $targetAttribute = $attribute == 'pref' ? 'prio' : $attribute;
                     $phone->addAttribute($targetAttribute, $number[$attribute]);
                 }
-            }
-
-            // not more than nine phone numbers per contact
-            if (++$phoneCounter == 9) {
-                break;
             }
         }
     }
@@ -145,30 +145,28 @@ class Converter
             return [];
         }
 
-        $phoneNumbers = [];
+        $addNumber = [];
+        $idnum = -1;
 
         $replaceCharacters = $this->config['phoneReplaceCharacters'] ?? [];
         $phoneTypes = $this->config['phoneTypes'] ?? [];
 
         foreach ($card->phone as $numberType => $numbers) {
-            $addNumber = []; // TODO: this catches a small bug in the logic below
-
             foreach ($numbers as $number) {
-                $addNumber = [];
-
+                $idnum++;
                 if (count($replaceCharacters)) {
                     $number = str_replace("\xc2\xa0", "\x20", $number);   // delete the wrong ampersand conversion
                     $number = strtr($number, $replaceCharacters);
                     $number = trim(preg_replace('/\s+/', ' ', $number));
                 }
-
-                $addNumber['number'] = $number;
+                $addNumber[$idnum]['number'] = $number;
+                
                 $type = 'other';
                 $numberType = strtolower($numberType);
-
                 if (stripos($numberType, 'fax') !== false) {
                     $type = 'fax_work';
-                } else {
+                }
+                else {
                     foreach ($phoneTypes as $type => $value) {
                         if (stripos($numberType, $type) !== false) {
                             $type = $value;
@@ -176,22 +174,23 @@ class Converter
                         }
                     }
                 }
-                $addNumber['type'] = $type;
+                $addNumber[$idnum]['type'] = $type;
             }
 
             if (strpos($numberType, 'pref') !== false) {
-                $addNumber['pref'] = 1;
+                $addNumber[$idnum]['pref'] = 1;
             }
 
             // add quick dial number; Fritz!Box will add the prefix **7 automatically
             if (isset($card->xquickdial)) {
                 if (!in_array($card->xquickdial, $this->uniqueDials)) {    // quick dial number really unique?
                     if (strpos($numberType, 'pref') !== false) {
-                        $addNumber['quickdial'] = $card->xquickdial;
+                        $addNumber[$idnum]['quickdial'] = $card->xquickdial;
                         $this->uniqueDials[] = $card->xquickdial;          // keep quick dial number for cross check
                         unset($card->xquickdial);                          // flush used quick dial number
                     }
-                } else {
+                } 
+                else {
                     $format = "The quick dial number >%s< has been assigned more than once (%s)!";
                     error_log(sprintf($format, $card->xquickdial, $number));
                 }
@@ -201,22 +200,21 @@ class Converter
             if (isset($card->xvanity)) {
                 if (!in_array($card->xvanity, $this->uniqueDials)) {       // vanity string really unique?
                     if (strpos($numberType, 'pref') !== false) {
-                        $addNumber['vanity'] = $card->xvanity;
+                        $addNumber[$idnum]['vanity'] = $card->xvanity;
                         $this->uniqueDials[] = $card->xvanity;             // keep vanity string for cross check
                         unset($card->xvanity);                             // flush used vanity number
                     }
-                } else {
+                } 
+                else {
                     $format = "The vanity string >%s< has been assigned more than once (%s)!";
                     error_log(sprintf($format, $card->xvanity, $number));
                 }
             }
-
-            $phoneNumbers[] = $addNumber;
         }
 
         // sort phone numbers
-        if (count($phoneNumbers) > 1) {
-            usort($phoneNumbers, function ($a, $b) {
+        if (count($addNumber) > 1) {
+            usort($addNumber, function ($a, $b) {
                 $idx1 = array_search($a['type'], $this->phoneSort, true);
                 $idx2 = array_search($b['type'], $this->phoneSort, true);
                 if ($idx1 == $idx2) {
@@ -227,7 +225,7 @@ class Converter
             });
         }
 
-        return $phoneNumbers;
+        return $addNumber;
     }
 
     /**
