@@ -32,7 +32,7 @@ class Converter
      * All conversion steps operate on $this->contact
      *
      * @param stdClass $card
-     * @return SimpleXMLElement|null
+     * @return array of SimpleXMLElement|null
      */
     public function convert(stdClass $card)
     {
@@ -54,7 +54,7 @@ class Converter
             $this->addPhone($numberArray);
 
             // add eMail
-            if (count($adresses) && $numberArray = 0) {             // only into the first chunk
+            if (count($adresses)) {
                 $this->addEmail($adresses);
             }
 
@@ -145,6 +145,7 @@ class Converter
             return [];
         }
 
+        $number;
         $addNumber = [];
         $idnum = -1;
 
