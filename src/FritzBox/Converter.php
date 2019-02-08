@@ -46,7 +46,7 @@ class Converter
 
         $numberArrays = array_chunk($numbers, 9);
 
-        foreach ($numberArrays as $numberArray) {
+        foreach ($numberArrays as $key => $numberArray) {
             $this->contact = new SimpleXMLElement('<contact />');
             $this->contact->addChild('carddav_uid', $card->uid);    // reference for image upload
 
@@ -54,7 +54,7 @@ class Converter
             $this->addPhone($numberArray);
 
             // add eMail
-            if (count($adresses)) {
+            if (count($adresses) && $key == 0) {
                 $this->addEmail($adresses);
             }
 
