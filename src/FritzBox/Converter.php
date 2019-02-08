@@ -32,41 +32,46 @@ class Converter
      * All conversion steps operate on $this->contact
      *
      * @param stdClass $card
-     * @return SimpleXMLElement|null
+     * @return SimpleXMLElement[]
      */
-    public function convert(stdClass $card)
+    public function convert(stdClass $card): array
     {
-        $numbers  = $this->getPhoneNumbers($card);  // get array of prequalified phone numbers
+        $allNumbers  = $this->getPhoneNumbers($card);  // get array of prequalified phone numbers
         $adresses = $this->getEmailAdresses($card); // get array of prequalified email adresses
 
-        if (!count($numbers)) {
-            return null;
+        $contacts = [];
+        if (count($allNumbers) > 9) {
+            error_log("Contact with >9 phone numbers will be split");
         }
 
-        $this->contact = new SimpleXMLElement('<contact />');
-        $this->contact->addChild('carddav_uid', $card->uid);    // reference for image upload
+        foreach (array_chunk($allNumbers, 9) as $numbers) {
+            $this->contact = new SimpleXMLElement('<contact />');
+            $this->contact->addChild('carddav_uid', $card->uid);    // reference for image upload
 
-        $this->addVip($card);
-        $this->addPhone($numbers);
+            $this->addVip($card);
+            $this->addPhone($numbers);
 
-        // add eMail
-        if (count($adresses)) {
-            $this->addEmail($adresses);
-        }
-
-        // add Person
-        $person = $this->contact->addChild('person');
-        $realName = htmlspecialchars($this->getProperty($card, 'realName'));
-        $person->addChild('realName', $realName);
-
-        // add photo
-        if (isset($card->rawPhoto) && isset($card->imageURL)) {
-            if (isset($this->configImagePath)) {
-                $person->addChild('imageURL', $card->imageURL);
+            // add eMail
+            if (count($adresses)) {
+                $this->addEmail($adresses);
             }
+
+            // add Person
+            $person = $this->contact->addChild('person');
+            $realName = htmlspecialchars($this->getProperty($card, 'realName'));
+            $person->addChild('realName', $realName);
+
+            // add photo
+            if (isset($card->rawPhoto) && isset($card->imageURL)) {
+                if (isset($this->configImagePath)) {
+                    $person->addChild('imageURL', $card->imageURL);
+                }
+            }
+
+            $contacts[] = $this->contact;
         }
 
-        return $this->contact;
+        return $contacts;
     }
 
     /**
@@ -94,11 +99,10 @@ class Converter
     private function addPhone(array $numbers)
     {
         $telephony = $this->contact->addChild('telephony');
-        $phoneCounter = 0;
 
-        foreach ($numbers as $number) {
+        foreach ($numbers as $idx => $number) {
             $phone = $telephony->addChild('number', $number['number']);
-            $phone->addAttribute('id', (string)$phoneCounter);
+            $phone->addAttribute('id', (string)$idx);
 
             foreach (['type', 'quickdial', 'vanity'] as $attribute) {
                 if (isset($number[$attribute])) {
@@ -107,28 +111,20 @@ class Converter
                     $phone->addAttribute($targetAttribute, $number[$attribute]);
                 }
             }
-
-            // not more than nine phone numbers per contact
-            if (++$phoneCounter == 9) {
-                break;
-            }
         }
     }
 
     private function addEmail(array $addresses)
     {
         $services = $this->contact->addChild('services');
-        $eMailCounter = 0;
 
-        foreach ($addresses as $address) {
+        foreach ($addresses as $idx => $address) {
             $email = $services->addChild('email', $address['email']);
-            $email->addAttribute('id', (string)$eMailCounter);
+            $email->addAttribute('id', (string)$idx);
 
             if (isset($address['classifier'])) {
                 $email->addAttribute('classifier', $address['classifier']);
             }
-
-            $eMailCounter++;
         }
     }
 
