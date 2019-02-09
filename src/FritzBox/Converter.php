@@ -44,7 +44,7 @@ class Converter
             error_log("Contact with >9 phone numbers will be split");
         }
 
-        foreach (array_chunk($allNumbers, 9) as $numbers) {
+        foreach (array_chunk($allNumbers, 9) as $idnum => $numbers) {
             $this->contact = new SimpleXMLElement('<contact />');
             $this->contact->addChild('carddav_uid', $card->uid);    // reference for image upload
 
@@ -52,7 +52,7 @@ class Converter
             $this->addPhone($numbers);
 
             // add eMail
-            if (count($adresses)) {
+            if (count($adresses) && $idnum == 0) {   // emails only once in the first block
                 $this->addEmail($adresses);
             }
 
@@ -141,53 +141,53 @@ class Converter
             return [];
         }
 
+        $number;                 // solves travis CI comment
         $phoneNumbers = [];
+        $idx = -1;
 
         $replaceCharacters = $this->config['phoneReplaceCharacters'] ?? [];
         $phoneTypes = $this->config['phoneTypes'] ?? [];
 
         foreach ($card->phone as $numberType => $numbers) {
-            $addNumber = []; // TODO: this catches a small bug in the logic below
-
             foreach ($numbers as $number) {
-                $addNumber = [];
-
+                $idx++;
                 if (count($replaceCharacters)) {
                     $number = str_replace("\xc2\xa0", "\x20", $number);   // delete the wrong ampersand conversion
                     $number = strtr($number, $replaceCharacters);
                     $number = trim(preg_replace('/\s+/', ' ', $number));
                 }
-
-                $addNumber['number'] = $number;
-                $type = 'other';
+                $phoneNumbers[$idx]['number'] = $number;
+                
+                $type = 'other';                            // default value
                 $numberType = strtolower($numberType);
-
                 if (stripos($numberType, 'fax') !== false) {
                     $type = 'fax_work';
-                } else {
-                    foreach ($phoneTypes as $type => $value) {
-                        if (stripos($numberType, $type) !== false) {
+                }
+                else {
+                    foreach ($phoneTypes as $phonetype => $value) {
+                        if (stripos($numberType, $phonetype) !== false) {
                             $type = $value;
                             break;
                         }
                     }
                 }
-                $addNumber['type'] = $type;
+                $phoneNumbers[$idx]['type'] = $type;
             }
 
             if (strpos($numberType, 'pref') !== false) {
-                $addNumber['pref'] = 1;
+                $phoneNumbers[$idx]['pref'] = 1;
             }
 
             // add quick dial number; Fritz!Box will add the prefix **7 automatically
             if (isset($card->xquickdial)) {
                 if (!in_array($card->xquickdial, $this->uniqueDials)) {    // quick dial number really unique?
                     if (strpos($numberType, 'pref') !== false) {
-                        $addNumber['quickdial'] = $card->xquickdial;
+                        $phoneNumbers[$idx]['quickdial'] = $card->xquickdial;
                         $this->uniqueDials[] = $card->xquickdial;          // keep quick dial number for cross check
                         unset($card->xquickdial);                          // flush used quick dial number
                     }
-                } else {
+                } 
+                else {
                     $format = "The quick dial number >%s< has been assigned more than once (%s)!";
                     error_log(sprintf($format, $card->xquickdial, $number));
                 }
@@ -197,17 +197,16 @@ class Converter
             if (isset($card->xvanity)) {
                 if (!in_array($card->xvanity, $this->uniqueDials)) {       // vanity string really unique?
                     if (strpos($numberType, 'pref') !== false) {
-                        $addNumber['vanity'] = $card->xvanity;
+                        $phoneNumbers[$idx]['vanity'] = $card->xvanity;
                         $this->uniqueDials[] = $card->xvanity;             // keep vanity string for cross check
                         unset($card->xvanity);                             // flush used vanity number
                     }
-                } else {
+                } 
+                else {
                     $format = "The vanity string >%s< has been assigned more than once (%s)!";
                     error_log(sprintf($format, $card->xvanity, $number));
                 }
             }
-
-            $phoneNumbers[] = $addNumber;
         }
 
         // sort phone numbers
@@ -222,7 +221,6 @@ class Converter
                 }
             });
         }
-
         return $phoneNumbers;
     }
 
