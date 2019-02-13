@@ -174,11 +174,17 @@ class Converter
                     'number' => $number,
                 ];
 
-                // add quick dial and vanity numbers:
-                // for quick dial numbers Fritz!Box will add the prefix **7 automatically
-                // for vanity numbers Fritz!Box will add the prefix **8 automatically
-                foreach (['xquickdial' => 'quickdial', 'xvanity' => 'vanity'] as $attr => $property) {
+                // Add quick dial and vanity numbers if card has xquickdial or xvanity attributes set
+                // A phone number with 'PREF' type is needed to activate the attribute.
+                // For quick dial numbers Fritz!Box will add the prefix **7 automatically.
+                // For vanity numbers Fritz!Box will add the prefix **8 automatically.
+                foreach (['quickdial', 'vanity'] as $property) {
+                    $attr = 'x' . $property;
                     if (!isset($card->$attr)) {
+                        continue;
+                    }
+
+                    if (stripos($numberType, 'pref') === false) {
                         continue;
                     }
 
@@ -188,10 +194,8 @@ class Converter
                         continue;
                     }
 
-                    if (stripos($numberType, 'pref') !== false) {
-                        $addNumber[$property] = $card->$attr;
-                        $this->uniqueDials[] = $card->$attr;  // keep list of unique numbers
-                    }
+                    $addNumber[$property] = $card->$attr;
+                    $this->uniqueDials[] = $card->$attr;  // keep list of unique numbers
                 }
 
                 $res[] = $addNumber;
