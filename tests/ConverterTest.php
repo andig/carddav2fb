@@ -22,7 +22,10 @@ class ConverterTest extends TestCase
         return [
             'conversions' => [
                 'phoneTypes' => [
-                    'FAX' => 'fax_work',
+                    'WORK' => 'work',
+                    'HOME' => 'home',
+                    'CELL' => 'mobile',
+                    'FAX' => 'fax_work'
                 ],
                 'realName' => [],
             ],
@@ -120,19 +123,60 @@ class ConverterTest extends TestCase
         $this->assertEquals($realName, (string)$contact->person->realName);
     }
 
-    public function testVanityAndQuickdialNumbers()
+    public function testPhoneTypeAreMappedAndOrdered()
     {
-        $this->contact->xquickdial = 'quickdial';
-        $this->contact->xvanity = 'vanity';
-        $this->contact->phone->pref = ['2'];
+        $this->contact->phone = new stdClass;
+
+        $idx = 0;
+        $conversions = $this->defaultConfig()['conversions'];
+        foreach ($conversions['phoneTypes'] as $key => $value) {
+            $phoneType = sprintf('foo;%s;bar', strtolower($key));
+            $this->contact->phone->$key = [(string)$idx++];
+        }
 
         $res = $this->converter->convert($this->contact);
         $this->assertCount(1, $res);
 
         $contact = $res[0];
-        $this->assertInstanceOf(SimpleXMLElement::class, $contact->person);
+        $this->assertCount(count($conversions['phoneTypes']), $contact->telephony->children());
 
-        $vanityNumber = $contact->telephony->children()[1]; // 2nd number
+        $idx = 0;
+        foreach ($conversions['phoneTypes'] as $key => $value) {
+            $number = $contact->telephony->children()[$idx];
+            $this->assertEquals($value, (string)$number['type']);
+            $this->assertEquals((string)$idx++, (string)$number);
+        }
+    }
+
+    public function testFaxIsMapped()
+    {
+        $this->contact->phone = new stdClass;
+        $this->contact->phone->fax = ['2'];
+
+        $res = $this->converter->convert($this->contact);
+        $this->assertCount(1, $res);
+
+        $contact = $res[0];
+        $this->assertCount(1, $contact->telephony->children());
+
+        $faxNumber = $contact->telephony->children()[0]; // 1st number
+        $this->assertEquals('fax_work', (string)$faxNumber['type']);
+    }
+
+    public function testVanityAndQuickdialNumbers()
+    {
+        $this->contact->phone = new stdClass;
+        $this->contact->phone->pref = ['2'];
+        $this->contact->xquickdial = 'quickdial';
+        $this->contact->xvanity = 'vanity';
+
+        $res = $this->converter->convert($this->contact);
+        $this->assertCount(1, $res);
+
+        $contact = $res[0];
+        $this->assertCount(1, $contact->telephony->children());
+
+        $vanityNumber = $contact->telephony->children()[0];
         $this->assertEquals('quickdial', (string)$vanityNumber['quickdial']);
         $this->assertEquals('vanity', (string)$vanityNumber['vanity']);
     }

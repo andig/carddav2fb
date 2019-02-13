@@ -80,10 +80,10 @@ $config = [
          * The order of the target values (first occurrence) determines the sorting of the telephone numbers
          */
         'phoneTypes' => [
-            'FAX' => 'fax_work',
             'WORK' => 'work',
             'HOME' => 'home',
-            'CELL' => 'mobile'
+            'CELL' => 'mobile',
+            'FAX' => 'fax_work' // NOTE: actual mapping is ignored but order counts, so fac is put last
         ],
         'emailTypes' => [
             'WORK' => 'work',

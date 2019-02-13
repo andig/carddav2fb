@@ -164,6 +164,11 @@ class Converter
                     }
                 }
 
+                // hard mapping of fax types
+                if (stripos($numberType, 'fax') !== false) {
+                    $type = 'fax_work';
+                }
+
                 $addNumber = [
                     'type' => $type,
                     'number' => $number,
