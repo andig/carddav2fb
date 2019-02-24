@@ -64,14 +64,14 @@ class Backend
     {
         if($server)
         {
-            if ($server["url"]) {
-                $this->setUrl($server["url"]);
+            if ($server['url']) {
+                $this->setUrl($server['url']);
             }
             
-            if(isset($server["vcard_extension"]))
+            if(isset($server['vcard_extension']))
             {
                 // workaround for providers that don't use the default .vcf extension
-                $this->vcard_extension = $server["vcard_extension"];
+                $this->vcard_extension = $server['vcard_extension'];
             }
 
             $this->setClientOptions([
@@ -80,9 +80,9 @@ class Backend
                 ]
             ]);
             
-            if(is_array($server["collections"]))
+            if(is_array($server['collections']))
             {
-                $this->collections = $server["collections"];
+                $this->collections = $server['collections'];
             }
         }
     }
