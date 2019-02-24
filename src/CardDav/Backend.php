@@ -23,6 +23,12 @@ class Backend
      * @var string
      */
     private $url;
+    
+    /**
+     * CardDAV collections to include
+     * @var array
+     */
+    private $collections;
 
     /**
      * VCard File URL Extension
@@ -52,19 +58,33 @@ class Backend
      * Constructor
      * Sets the CardDAV server url
      *
-     * @param   string  $url    CardDAV server url
+     * @param   array  $server    CardDAV server
      */
-    public function __construct(string $url=null)
+    public function __construct($server=null)
     {
-        if ($url) {
-            $this->setUrl($url);
-        }
+        if($server)
+        {
+            if ($server["url"]) {
+                $this->setUrl($server["url"]);
+            }
+            
+            if(isset($server["vcard_extension"]))
+            {
+                // workaround for providers that don't use the default .vcf extension
+                $this->vcard_extension = $server["vcard_extension"];
+            }
 
-        $this->setClientOptions([
-            'headers' => [
-                'Depth' => 1
-            ]
-        ]);
+            $this->setClientOptions([
+                'headers' => [
+                    'Depth' => 1
+                ]
+            ]);
+            
+            if(is_array($server["collections"]))
+            {
+                $this->collections = $server["collections"];
+            }
+        }
     }
 
     /**
@@ -88,11 +108,6 @@ class Backend
     public function setUrl(string $url)
     {
         $this->url = rtrim($url, '/') . '/';
-
-        // workaround for providers that don't use the default .vcf extension
-        if (strpos($this->url, "google.com")) {
-            $this->vcard_extension = '';
-        }
     }
 
     /**
@@ -218,6 +233,44 @@ class Backend
         $parser = new Parser($body);
         $vcard = $parser->getCardAtIndex(0);
 
+        $this->parseVcard($vcard);
+
+        return $vcard;
+    }
+    
+    /**
+     * Gets clean vCards from the CardDAV server
+     *
+     * @param    string  $vcard_id   vCard collection on the CardDAV server
+     * @return   stdClass[]          vCard (text/vcard)
+     */
+    public function getVcardsFromCollection(string $vcard_id): array
+    {
+        $vcard_id = str_replace($this->vcard_extension, '', $vcard_id) . $this->vcard_extension;
+        $response = $this->getCachedClient()->request('GET', $this->url . $vcard_id);
+
+        $body = (string)$response->getBody();
+
+        $parser = new Parser($body);
+        $vcards = $parser->getCards();
+        
+        $vcard_array = [];
+        
+        foreach($vcards as $vcard)
+        {
+            $vcard_array[] = $this->parseVcard($vcard);
+        }
+        
+        return $vcard_array;
+    }
+    
+    /**
+     * common function for getVcard und getVcards
+     * @param    stdClass          vCard
+     * @return   stdClass          vCard
+     */
+    private function parseVcard($vcard)
+    {
         if (isset($this->substitutes)) {
             foreach ($this->substitutes as $substitute) {
                 $vcard = $this->embedBase64($vcard, $substitute);
@@ -226,7 +279,6 @@ class Backend
         if (is_callable($this->callback)) {
             ($this->callback)();
         }
-
         return $vcard;
     }
 
@@ -245,11 +297,23 @@ class Backend
 
         foreach ($xml->response as $response) {
             if ((preg_match('/vcard/', $response->propstat->prop->getcontenttype) || preg_match('/vcf/', $response->href)) &&
-              ($response->propstat->prop->resourcetype->collection == 0)) {
+              !$response->propstat->prop->resourcetype->collection) {
                 $id = basename($response->href);
                 $id = str_replace($this->vcard_extension, '', $id);
 
                 $cards[] = $this->getVcard($id);
+            } elseif ((preg_match('/vcard/', $response->propstat->prop->getcontenttype) || preg_match('/vcf/', $response->href)) &&
+                $response->propstat->prop->resourcetype->collection) {
+                
+                if (!count($this->collections) || (in_array($response->propstat->prop->displayname, $this->collections)))
+                {
+                    $id = basename($response->href);
+                    $id = str_replace($this->vcard_extension, '', $id);
+                    foreach($this->getVcardsFromCollection($id) as $card)
+                    {
+                        $cards[] = $card;
+                    };
+                }
             }
         }
 

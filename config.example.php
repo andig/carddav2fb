@@ -17,7 +17,14 @@ $config = [
             'http' => [           // http client options are directly passed to Guzzle http client
                 // 'verify' => false, // uncomment to disable certificate check
                 // 'auth' => 'digest', // uncomment for digest auth
-            ]
+            ],
+            // optional: if server response are collections, choose here the collections to include. If empty, all collections are included.
+            collections => [
+                'collection1',
+                'collection2'
+            ],
+            // optional: vcf_extension for server with other (or no) extension then default .vcf
+            vcf_extension = ''
         ],
 /* add as many as you need
         [

@@ -21,7 +21,7 @@ function backendProvider(array $config): Backend
 {
     $options = $config['server'] ?? $config;
 
-    $backend = new Backend($options['url']);
+    $backend = new Backend($options);
     $backend->setAuth($options['user'], $options['password']);
     $backend->mergeClientOptions($options['http'] ?? []);
 
