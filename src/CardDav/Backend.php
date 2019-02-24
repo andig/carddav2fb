@@ -28,7 +28,7 @@ class Backend
      * CardDAV collections to include
      * @var array
      */
-    private $collections;
+    private $collections = [];
 
     /**
      * VCard File URL Extension
