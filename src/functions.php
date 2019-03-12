@@ -307,6 +307,75 @@ function filterMatches($attribute, $filterValues): bool
 }
 
 /**
+ * download the current phonebook from the FRITZ!Box
+ * @param  array config  configuration
+ * @return xml           phonebook
+ */
+function downloadPhonebook(array $config)
+{
+    $fritzbox  = $config['fritzbox'];
+    $phonebook = $config['phonebook'];
+    $fritz = new Api($fritzbox['url']);
+    $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
+    $fritz->mergeClientOptions($fritzbox['http'] ?? []);
+    $fritz->login();
+    $formfields = [
+        'PhonebookId' => $phonebook['id'],
+        'PhonebookExportName' => $phonebook['name'],
+        'PhonebookExport' => "",
+    ];
+    $result = $fritz->postFile($formfields, []); // send the command to load existing phone book
+    if (substr($result, 0, 5) !== "<?xml") {
+        error_log("ERROR: Could not load old phonebook with ID=".$config['phonebook']['id']);
+        return new SimpleXMLElement("<xml><empty /></xml>");
+    }
+    $xmlPhonebook = simplexml_load_string($result);
+    return $xmlPhonebook;
+}
+
+/**
+ * get quickdial and vanity attributes from given XML phone book
+ * @param   SimpleXMLElement    $xmlPhonebook
+ * @return  array 
+ */
+function getSpecialAttributes ($xml)
+{
+    $specialAttributes = [];
+    foreach ($xml->phonebook->contact as $contact) {
+        foreach ($contact->telephony->number as $number) {
+            if (isset($number->attributes()->quickdial) || !empty($number->attributes()->vanity)) {
+                foreach ($number->attributes() as $key => $value ) {
+                    $attributes[$key] = (string)$value;
+                }
+                $specialAttributes[(string)$contact->carddav_uid] = $attributes;
+            }
+        }
+    }
+    return $specialAttributes;
+}
+
+/**
+ * writes back previous saved quickdial and vanity attributes  
+ * @param   stdClass  $cards
+ * @param   array     $attributes
+ * @return  array 
+ */
+function setSpecialAttributes($cards, $attributes)
+{
+    foreach ($cards as $card) {
+        if (array_key_exists($card->uid, $attributes)) {
+            if (isset($attributes[$card->uid]['quickdial'])) {
+                $card->xquickdial = $attributes[$card->uid]['quickdial'];
+            }
+            if (isset($attributes[$card->uid]['vanity'])) {
+                $card->xvanity = $attributes[$card->uid]['vanity'];
+            }
+        }
+    }
+    return $cards;
+}
+
+/**
  * Export cards to fritzbox xml
  *
  * @param array $cards
