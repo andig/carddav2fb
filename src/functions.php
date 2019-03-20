@@ -308,8 +308,8 @@ function filterMatches($attribute, $filterValues): bool
 
 /**
  * download the current phonebook from the FRITZ!Box
- * @param  array config  configuration
- * @return xml           phonebook
+ * @param  array   $config  configuration
+ * @return SimpleXMLElement
  */
 function downloadPhonebook(array $config)
 {
@@ -335,7 +335,10 @@ function downloadPhonebook(array $config)
 
 /**
  * get quickdial and vanity attributes from given XML phone book
- * @param   SimpleXMLElement    $xmlPhonebook
+ * Via the FRITZ!Box GUI it is only possible to assign one(!) number per contact
+ * to a quickdial number. In addition, there is the restriction that a vanity number
+ * can only be assigned if also a quickdial number is assigned (both to the same number!).
+ * @param   SimpleXMLElement    $xml
  * @return  array 
  */
 function getSpecialAttributes ($xml)
@@ -344,6 +347,7 @@ function getSpecialAttributes ($xml)
     foreach ($xml->phonebook->contact as $contact) {
         foreach ($contact->telephony->number as $number) {
             if (isset($number->attributes()->quickdial) || !empty($number->attributes()->vanity)) {
+                $attributes['number'] = $number;
                 foreach ($number->attributes() as $key => $value ) {
                     $attributes[$key] = (string)$value;
                 }
@@ -355,20 +359,30 @@ function getSpecialAttributes ($xml)
 }
 
 /**
- * writes back previous saved quickdial and vanity attributes  
+ * writes back previous saved quickdial and vanity attributes into the vCard
+ * the array key of the assigned phone number will expanded
+ * the quickdial and vanity number are stored seperatly 
  * @param   stdClass  $cards
  * @param   array     $attributes
- * @return  array 
+ * @return  stdClass 
  */
 function setSpecialAttributes($cards, $attributes)
 {
     foreach ($cards as $card) {
         if (array_key_exists($card->uid, $attributes)) {
             if (isset($attributes[$card->uid]['quickdial'])) {
-                $card->xquickdial = $attributes[$card->uid]['quickdial'];
+                $card->quickdial = $attributes[$card->uid]['quickdial'];    // add the quickdial to the vCard
+                $additionalType = ";QUICKDIAL";
             }
             if (isset($attributes[$card->uid]['vanity'])) {
-                $card->xvanity = $attributes[$card->uid]['vanity'];
+                $card->vanity = $attributes[$card->uid]['vanity'];          // add the vanity to the vCard
+                $additionalType = $additionalType . ";VANITY";              // see getSpecialAttributes comment for this sequence
+            }
+            foreach ($card->phone as $type => $number) {                    // figure out the assigned number
+                if ($attributes[$card->uid]['number'] == $number) {
+                    $card->phone[$type . $additionalType] = $number ;       // expand the types of mappings
+                    unset($card->phone[$type]);
+                }
             }
         }
     }

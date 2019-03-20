@@ -174,28 +174,13 @@ class Converter
                     'number' => $number,
                 ];
 
-                // Add quick dial and vanity numbers if card has xquickdial or xvanity attributes set
-                // A phone number with 'PREF' type is needed to activate the attribute.
-                // For quick dial numbers Fritz!Box will add the prefix **7 automatically.
-                // For vanity numbers Fritz!Box will add the prefix **8 automatically.
+                // Add quick dial and vanity numbers if card has quickdial or vanity attributes set
+                // Quick dial or vanity numbers are read from the previous Fritz!Box phonebook.
                 foreach (['quickdial', 'vanity'] as $property) {
-                    $attr = 'x' . $property;
-                    if (!isset($card->$attr)) {
+                    if (!isset($card->$property)) {
                         continue;
                     }
-
-                    if (stripos($numberType, 'pref') === false) {
-                        continue;
-                    }
-
-                    // number unique?
-                    if (in_array($card->$attr, $this->uniqueDials)) {
-                        error_log(sprintf("The %s number >%s< has been assigned more than once (%s)!", $property, $card->$attr, $number));
-                        continue;
-                    }
-
-                    $addNumber[$property] = $card->$attr;
-                    $this->uniqueDials[] = $card->$attr;  // keep list of unique numbers
+                    $addNumber[$property] = $card->$property;
                 }
 
                 $res[] = $addNumber;
