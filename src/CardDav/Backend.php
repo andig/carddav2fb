@@ -4,6 +4,7 @@ namespace Andig\CardDav;
 
 use Andig\Http\ClientTrait;
 use Andig\Vcard\Parser;
+use Sabre\VObject\Reader;
 use GuzzleHttp\Client;
 use \stdClass;
 
@@ -159,6 +160,10 @@ EOD
                 $vcard = $this->parseVcardFromContent($content);
                 $vcard = $this->enrichVcard($vcard);
                 $cards[] = $vcard;
+
+                $c = Reader::read($content);
+                print_r($c->children());
+                die;
 
                 $this->progress();
             }
