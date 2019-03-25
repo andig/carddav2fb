@@ -51,6 +51,12 @@ Get help for a command:
   * ftp access is activ [Heimnetz -> Speicher (NAS) -> Heimnetzfreigabe]
   * you use an standalone user (NOT! dslf-config) which has explicit permissions for FRITZ!Box settings, access to NAS content and read/write permission to all available memory [System -> FRITZ!Box-Benutzer -> [user] -> Berechtigungen]
 
+## Debugging
+
+For debugging please set your config.php to
+
+    'http' => 'debug' => true
+
 ## License
 This script is released under Public Domain, some parts under GNU AGPL or MIT license. Make sure you understand which parts are which.
 
