@@ -158,12 +158,14 @@ EOD
                 $content = (string)$prop->{'address-data'};
 
                 $vcard = $this->parseVcardFromContent($content);
-                $vcard = $this->enrichVcard($vcard);
-                $cards[] = $vcard;
+                // print_r($vcard);
 
-                $c = Reader::read($content);
-                print_r($c->children());
-                die;
+                $vcard = Reader::read($content);
+                $vcard = $vcard->children()[0];
+                // print_r($vcard);
+
+                // $vcard = $this->enrichVcard($vcard);
+                $cards[] = $vcard;
 
                 $this->progress();
             }
