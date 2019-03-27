@@ -49,7 +49,7 @@ class RunCommand extends Command
             $progress->finish();
 
             $vcards = array_merge($vcards, $xcards);
-            $quantity += count($vcards);
+            $quantity += count($xcards);
             error_log(sprintf("\nDownloaded %d vCard(s)", $quantity));
         }
 
