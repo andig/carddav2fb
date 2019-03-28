@@ -71,7 +71,7 @@ class RunCommand extends Command
 
             $progress = new ProgressBar($output);
             $progress->start(count($filtered));
-            $pictures = uploadImages($filtered, $this->config['fritzbox'], $this->config['phonebook'], function () use ($progress) {
+            $pictures = uploadImages($filtered, $this->config, function () use ($progress) {
                 $progress->advance();
             });
             $progress->finish();

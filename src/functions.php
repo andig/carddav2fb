@@ -43,47 +43,65 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
 }
 
 /**
+ * set up a stable FTP connection to a designated destination
+ * @param array $config
+ * @param string $pathKey array key to the destination path
+ * @param string $purpose part of error message
+ * @return resource 
+ */
+function setUpFTPConnection ($config, $pathKey, $purpose)
+{
+    $fritzbox = $config['fritzbox'];
+
+    $ftpserver = parse_url($fritzbox['url'], PHP_URL_HOST) ? parse_url($fritzbox['url'], PHP_URL_HOST) : $fritzbox['url'];
+    $connectFunc = (@$fritzbox['plainFTP']) ? 'ftp_connect' : 'ftp_ssl_connect';
+
+    if ($connectFunc == 'ftp_ssl_connect' && !function_exists('ftp_ssl_connect')) {
+        throw new \Exception("PHP lacks support for 'ftp_ssl_connect', please use `plainFTP` to switch to unencrypted FTP");
+    }
+
+    if (false === ($ftp_conn = $connectFunc($ftpserver))) {
+        $message = sprintf("Could not connect to ftp server %s for %s upload",$ftpserver , $purpose);
+        throw new \Exception($message);
+    }
+    if (!ftp_login($ftp_conn, $fritzbox['user'], $fritzbox['password'])) {
+        $message = sprintf("Could not log in %s to ftp server %s for %s upload", $fritzbox['user'], $ftpserver, $purpose);
+        throw new \Exception($message);
+    }
+    if (!ftp_pasv($ftp_conn, true)) {
+        $message = sprintf("Could not switch to passive mode on ftp server %s for s% upload", $ftpserver, $purpose);
+        throw new \Exception($message);
+    }
+    if (!ftp_chdir($ftp_conn, $fritzbox[$pathKey])) {
+        $message = sprintf("Could not change to dir %s on ftp server %s for %s upload", $fritzbox[$pathKey], $ftpserver, $purpose);
+        throw new \Exception($message);
+    }
+    return $ftp_conn;
+}
+
+/**
  * upload image files via ftp to the fritzbox fonpix directory
  *
  * @param stdClass[] $vcards downloaded vCards
  * @param array $config
- * @param array $phonebook
  * @param callable $callback
  * @return mixed false or [number of uploaded images, number of total found images]
  */
-function uploadImages(array $vcards, array $config, array $phonebook, callable $callback=null)
+function uploadImages(array $vcards, array $config, callable $callback=null)
 {
     $countUploadedImages = 0;
     $countAllImages = 0;
     $mapFTPUIDtoFTPImageName = [];                      // "9e40f1f9-33df-495d-90fe-3a1e23374762" => "9e40f1f9-33df-495d-90fe-3a1e23374762_190106123906.jpg"
     $timestampPostfix = substr(date("YmdHis"), 2);      // timestamp, e.g., 190106123906
 
-    if (null == ($imgPath = @$phonebook['imagepath'])) {
+    if (null == ($imgPath = @$config['phonebook']['imagepath'])) {
         throw new \Exception('Missing phonebook/imagepath in config. Image upload not possible.');
     }
     $imgPath = rtrim($imgPath, '/') . '/';  // ensure one slash at end
 
     // Prepare FTP connection
-    $ftpserver = parse_url($config['url'], PHP_URL_HOST) ? parse_url($config['url'], PHP_URL_HOST) : $config['url'];
-    $connectFunc = (@$config['plainFTP']) ? 'ftp_connect' : 'ftp_ssl_connect';
-
-    if ($connectFunc == 'ftp_ssl_connect' && !function_exists('ftp_ssl_connect')) {
-        throw new \Exception("PHP lacks support for 'ftp_ssl_connect', please use `plainFTP` to switch to unencrypted FTP.");
-    }
-
-    if (false === ($ftp_conn = $connectFunc($ftpserver))) {
-        throw new \Exception("Could not connect to ftp server ".$ftpserver." for image upload.");
-    }
-    if (!ftp_login($ftp_conn, $config['user'], $config['password'])) {
-        throw new \Exception("Could not log in ".$config['user']." to ftp server ".$ftpserver." for image upload.");
-    }
-    if (!ftp_pasv($ftp_conn, true)) {
-        throw new \Exception("Could not switch to passive mode on ftp server ".$ftpserver." for image upload.");
-    }
-    if (!ftp_chdir($ftp_conn, $config['fonpix'])) {
-        throw new \Exception("Could not change to dir ".$config['fonpix']." on ftp server ".$ftpserver." for image upload.");
-    }
-
+    $ftp_conn = setUpFTPConnection ($config, 'fonpix', 'image');
+    
     // Build up dictionary to look up UID => current FTP image file
     if (false === ($ftpFiles = ftp_nlist($ftp_conn, "."))) {
         $ftpFiles = [];
