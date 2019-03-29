@@ -47,7 +47,7 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
  * @param array $config
  * @param string $pathKey array key to the destination path
  * @param string $purpose part of error message
- * @return resource 
+ * @return stream
  */
 function setUpFTPConnection($config, $pathKey, $purpose)
 {
@@ -61,7 +61,7 @@ function setUpFTPConnection($config, $pathKey, $purpose)
     }
 
     if (false === ($ftp_conn = $connectFunc($ftpserver))) {
-        $message = sprintf("Could not connect to ftp server %s for %s upload", $ftpserver , $purpose);
+        $message = sprintf("Could not connect to ftp server %s for %s upload", $ftpserver, $purpose);
         throw new \Exception($message);
     }
     if (!ftp_login($ftp_conn, $fritzbox['user'], $fritzbox['password'])) {
