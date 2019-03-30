@@ -54,14 +54,12 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
  */
 function getFtpConnection($url, $user, $password, $directory, $secure)
 {
-
     $ftpserver = parse_url($url, PHP_URL_HOST) ? parse_url($url, PHP_URL_HOST) : $url;
-    $connectFunc = (@$secure) ? 'ftp_connect' : 'ftp_ssl_connect';
+    $connectFunc = $secure ? 'ftp_connect' : 'ftp_ssl_connect';
 
     if ($connectFunc == 'ftp_ssl_connect' && !function_exists('ftp_ssl_connect')) {
         throw new \Exception("PHP lacks support for 'ftp_ssl_connect', please use `plainFTP` to switch to unencrypted FTP");
     }
-
     if (false === ($ftp_conn = $connectFunc($ftpserver))) {
         $message = sprintf("Could not connect to ftp server %s for upload", $ftpserver);
         throw new \Exception($message);
@@ -86,6 +84,7 @@ function getFtpConnection($url, $user, $password, $directory, $secure)
  *
  * @param stdClass[] $vcards downloaded vCards
  * @param array $config
+ * @param array $phonebook
  * @param callable $callback
  * @return mixed false or [number of uploaded images, number of total found images]
  */
@@ -102,7 +101,8 @@ function uploadImages(array $vcards, array $config, array $phonebook, callable $
     $imgPath = rtrim($imgPath, '/') . '/';  // ensure one slash at end
 
     // Prepare FTP connection
-    $ftp_conn = getFtpConnection($config['url'], $config['user'], $config['password'], $config['fonpix'], $config['plainFTP']);
+    $secure = @$config['plainFTP'] ? $config['plainFTP'] : false;
+    $ftp_conn = getFtpConnection($config['url'], $config['user'], $config['password'], $config['fonpix'], $secure);
     
     // Build up dictionary to look up UID => current FTP image file
     if (false === ($ftpFiles = ftp_nlist($ftp_conn, "."))) {
