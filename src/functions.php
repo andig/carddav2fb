@@ -401,18 +401,11 @@ function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $config)
     }
 
     $formfields = [
-        'PhonebookId' => $config['phonebook']['id']
+        'PhonebookId' => $config['phonebook']['id'],
+        'PhonebookImportFile' => $xmlPhonebook->asXML(),    // convert XML object to XML string
     ];
 
-    $filefields = [
-        'PhonebookImportFile' => [
-            'type' => 'text/xml',
-            'filename' => 'updatepb.xml',
-            'content' => $xmlPhonebook->asXML(), // convert XML object to XML string
-        ]
-    ];
-
-    $result = $fritz->postFile($formfields, $filefields); // send the command to store new phonebook
+    $result = $fritz->postFile($formfields);                // send the command to store new phonebook
     if (strpos($result, 'Das Telefonbuch der FRITZ!Box wurde wiederhergestellt') === false) {
         throw new \Exception('Upload failed');
     }

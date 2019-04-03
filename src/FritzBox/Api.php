@@ -44,11 +44,10 @@ class Api
      * Multi-part file uploads
      *
      * @param array $formFields
-     * @param array $fileFields
      * @return string POST result
      * @throws \Exception
      */
-    public function postFile(array $formFields, array $fileFields): string
+    public function postFile(array $formFields): string
     {
         $multipart = [];
 
@@ -59,17 +58,6 @@ class Api
             $multipart[] = [
                 'name' => $key,
                 'contents' => $val,
-            ];
-        }
-
-        foreach ($fileFields as $name => $file) {
-            $multipart[] = [
-                'name' => $name,
-                'filename' => $file['filename'],
-                'contents' => $file['content'],
-                'headers' => [
-                    'Content-Type' => $file['type'],
-                ],
             ];
         }
 
