@@ -574,7 +574,7 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
  * @return void
  * @throws \Exception
  */
-function uploadBackgroundImage($quickdials, array $config)
+function uploadBackgroundImage($quickdials, $phone, array $config)
 {
     if (!isset($config['fritzfons'])) {
         return;
@@ -601,27 +601,25 @@ function uploadBackgroundImage($quickdials, array $config)
         'PhonebookEntryId' => '',
     ];
 
-    foreach ($config['fritzfons'] as $fritzfon) {
-        $formfields['PhonebookEntryId'] = $fritzfon;
+    $formfields['PhonebookEntryId'] = $phone;
 
-        foreach ($formfields as $key => $value) {
-            $content = $boundary . PHP_EOL .
-                        $contentStr . '"' . $key . '"' . PHP_EOL .
-                        'Content-Length: ' . strlen($value) . PHP_EOL . PHP_EOL .
-                        $value . PHP_EOL;
-            $body = $body . $content;
-        }
-
+    foreach ($formfields as $key => $value) {
         $content = $boundary . PHP_EOL .
-                    $contentStr . '"PhonebookPictureFile"' . PHP_EOL .
-                    'Content-Type: image/jpeg' . PHP_EOL . PHP_EOL .
-                    $backgroundImage . PHP_EOL .
-                    $boundary;
+                    $contentStr . '"' . $key . '"' . PHP_EOL .
+                    'Content-Length: ' . strlen($value) . PHP_EOL . PHP_EOL .
+                    $value . PHP_EOL;
         $body = $body . $content;
+    }
 
-        $result = $fritz->postImage($body);
-        if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt') === false) {
-            throw new \Exception('Upload failed');
-        }
+    $content = $boundary . PHP_EOL .
+                $contentStr . '"PhonebookPictureFile"' . PHP_EOL .
+                'Content-Type: image/jpeg' . PHP_EOL . PHP_EOL .
+                $backgroundImage . PHP_EOL .
+                $boundary;
+    $body = $body . $content;
+
+    $result = $fritz->postImage($body);
+    if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt') === false) {
+        throw new \Exception('Upload failed');
     }
 }
