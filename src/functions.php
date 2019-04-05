@@ -533,3 +533,155 @@ function phoneNumberAttributesSet(SimpleXMLElement $xmlPhonebook)
     }
     return false;
 }
+
+/**
+ * Get quickdial number and names as array from given XML phone book
+ *
+ * @param   SimpleXMLElement                $xmlPhonebook
+ * @return  array
+ */
+function getQuickdials(SimpleXMLElement $xmlPhonebook)
+{
+    if (!property_exists($xmlPhonebook, "phonebook")) {
+        return [];
+    }
+
+    $quickdialNames = [];
+    foreach ($xmlPhonebook->phonebook->contact as $contact) {
+        foreach ($contact->telephony->number as $number) {
+            if (isset($number->attributes()->quickdial)) {
+                $parts = explode (', ', $contact->person->realName);
+                if (count($parts) !== 2) {                     // if the name was not separated by a comma (no first and last name) 
+                    $name = $contact->person->realName;       // fullName
+                }
+                else {
+                    $name = $parts[1];                         // firstname
+                }
+                $name = preg_replace('/Dr. /', '', $name);
+                $quickdialNames[(string)$number->attributes()->quickdial] = substr($name, 0, 10);
+            }
+        }
+    }
+    return $quickdialNames;
+}
+
+/**
+ * creates an image based on a phone keypad with names assoziated to the quickdial numbers
+ *  
+ * @param array §quickdials
+ * @return resource
+ */
+function getBackgroundImage ($quickdials)
+{
+    $bgImage = imagecreatefromjpeg('./src/img/keypad.jpg');
+    putenv('GDFONTPATH=' . realpath('.'));
+    $font = '/src/img/impact';
+    $darkgrey = imagecolorallocate($bgImage, 109, 110, 112);
+    $lightblue = imagecolorallocate($bgImage, 38, 142, 223);
+    $darkblue = imagecolorallocate($bgImage, 0, 110, 192);
+    
+    foreach ($quickdials as $key => $quickdial) {
+        switch ($key) {
+            case 1:
+            case 4:
+            case 7:
+                $posX = 20;
+                break;
+            
+            case 2:
+            case 5:
+            case 8:
+                $posX = 178;
+                break;
+
+            case 3:
+            case 6:
+            case 9:
+                $posX = 342;
+                break;
+        }
+        switch ($key) {
+            case 1:
+            case 2:
+            case 3:
+                $posY = 74;
+                break;
+            
+            case 4:
+            case 5:
+            case 6:
+                $posY = 172;
+                break;
+        
+            case 7:
+            case 8:
+            case 9:
+                $posY = 272;
+                break;
+        }
+        imagettftext($bgImage, 20, 0, $posX, $posY, $lightblue, $font, $quickdial);
+    }
+    
+    ob_start();
+        imagejpeg($bgImage);
+        $content = ob_get_contents();
+    ob_end_clean();
+    imagedestroy($bgImage);
+
+    return $content;
+}
+
+/**
+ * Uploads background image to fritzbox
+ * 
+ * @param resource $image
+ * @param array $config
+ * @return void
+ * @throws \Exception
+ */
+function uploadBackgroundImage($image, array $config)
+{
+    $options = $config['fritzbox'];
+    if (!isset($options['fritzfons'])) {
+        return;
+    }
+    $boundary = '--' . sha1(uniqid());
+    $contentStr = 'Content-Disposition: form-data; name=';
+    
+    $fritz = new Api($options['url']);
+    $fritz->setAuth($options['user'], $options['password']);
+    $fritz->mergeClientOptions($options['http'] ?? []);
+    $fritz->login();
+    
+    $body = '';
+    $formfields = [
+        'sid' => $fritz->getSID(),
+        'PhonebookId' => '255',
+        'PhonebookType' => '1',
+        'PhonebookEntryId' => '',
+    ];
+
+    foreach ($options['fritzfons'] as $fritzfon) {
+        $formfields['PhonebookEntryId'] = $fritzfon;
+
+        foreach ($formfields as $key => $value) {
+            $content = $boundary . PHP_EOL .
+                        $contentStr . '"' . $key . '"' . PHP_EOL .
+                        'Content-Length: ' . strlen($value) . PHP_EOL . PHP_EOL .
+                        $value . PHP_EOL;
+            $body = $body . $content;
+        }
+
+        $content = $boundary . PHP_EOL .
+                    $contentStr . '"PhonebookPictureFile"' . PHP_EOL .
+                    'Content-Type: image/jpeg' . PHP_EOL . PHP_EOL .
+                    $image . PHP_EOL .
+                    $boundary;
+        $body = $body . $content;
+
+        $result = $fritz->postImage($body);
+        if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt') === false) {
+            throw new \Exception('Upload failed');
+        }
+    }
+}

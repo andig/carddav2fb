@@ -97,6 +97,12 @@ class RunCommand extends Command
 
         uploadPhonebook($xmlPhonebook, $this->config);
         error_log("Successful uploaded new Fritz!Box phonebook");
+
+        // uploading background image
+        error_log("Uploading background image to Fritz!Fon");
+        $image = getBackgroundImage (getQuickdials($xmlPhonebook));
+        uploadBackgroundImage($image, $this->config);
+
     }
 
 

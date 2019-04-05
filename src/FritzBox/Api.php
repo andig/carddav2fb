@@ -82,6 +82,24 @@ class Api
     }
 
     /**
+     * image upload
+     *
+     * @param string $body
+     * @return string POST result
+     * @throws \Exception
+     */
+    public function postImage($body): string
+    {
+        $url = $this->url . '/cgi-bin/firmwarecfg';
+
+        $resp = $this->getClient()->request('POST', $url, [
+            'body' => $body,
+        ]);
+
+        return (string)$resp->getBody();
+    }
+
+    /**
      * Login, throws on failure
      *
      * @throws \Exception

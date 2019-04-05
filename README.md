@@ -12,9 +12,10 @@ This is an entirely simplified version of https://github.com/jens-maus/carddav2f
   * if more than nine phone numbers are included, the contact will be divided into a corresponding number of phonebook entries (any existing email addresses are assigned to the first set [there is no quantity limit!])
   * phone numbers are sorted by type. The order of the conversion values ('phoneTypes') determines the order in the phone book entry
   * the contact's UID of the CardDAV server is added to the phonebook entry (not visible in the FRITZ! Box GUI)
-  * Automatically preserves QuickDial and Vanity attributes of phone numbers
+  * automatically preserves QuickDial and Vanity attributes of phone numbers
     set in FRITZ!Box Web GUI. Works without config. (Hint: If you used the
     old way of configuring your CardDav server with X-FB-QUICKDIAL /X-FB-VANITY, then your old config is respected and this new automatic feature is skipped).
+  * generates an image with keypad and designated quickdial numbers, which can be uploaded to designated handhelds (works only with FRITZ!Fon C4 or C5)
 
 ## Requirements
 
