@@ -99,10 +99,12 @@ class RunCommand extends Command
         error_log("Successful uploaded new Fritz!Box phonebook");
 
         // uploading background image
-        error_log("Uploading background image to Fritz!Fon");
-        $image = getBackgroundImage (getQuickdials($xmlPhonebook));
-        uploadBackgroundImage($image, $this->config);
-
+        if(isset($this->config['fritzbox']['fritzfons'])) {
+            error_log("Uploading background image to Fritz!Fon");
+            $quickdials = getQuickdials($xmlPhonebook);
+            uploadBackgroundImage($quickdials, $this->config['fritzbox']);
+            error_log("Successful uploaded new Fritz!Fon background image");
+        }
     }
 
 

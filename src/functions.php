@@ -6,6 +6,7 @@ use Andig\CardDav\Backend;
 use Andig\Vcard\Parser;
 use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
+use Andig\FritzBox\BGimage;
 use \SimpleXMLElement;
 use \stdClass;
 
@@ -566,94 +567,30 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
 }
 
 /**
- * creates an image based on a phone keypad with names assoziated to the quickdial numbers
- *  
- * @param array $quickdials
- * @return string|bool 
- */
-function getBackgroundImage ($quickdials)
-{
-    $bgImage = imagecreatefromjpeg('./src/img/keypad.jpg');
-    putenv('GDFONTPATH=' . realpath('.'));
-    $font = '/src/img/impact';
-    $darkgrey = imagecolorallocate($bgImage, 109, 110, 112);
-    $lightblue = imagecolorallocate($bgImage, 38, 142, 223);
-    $darkblue = imagecolorallocate($bgImage, 0, 110, 192);
-    $posX = 1;
-    $posY = 1;
-
-
-    foreach ($quickdials as $key => $quickdial) {
-        switch ($key) {
-            case 1:
-            case 4:
-            case 7:
-                $posX = 20;
-                break;
-            
-            case 2:
-            case 5:
-            case 8:
-                $posX = 178;
-                break;
-
-            case 3:
-            case 6:
-            case 9:
-                $posX = 342;
-                break;
-        }
-        switch ($key) {
-            case 1:
-            case 2:
-            case 3:
-                $posY = 74;
-                break;
-            
-            case 4:
-            case 5:
-            case 6:
-                $posY = 172;
-                break;
-        
-            case 7:
-            case 8:
-            case 9:
-                $posY = 272;
-                break;
-        }
-        imagettftext($bgImage, 20, 0, $posX, $posY, $lightblue, $font, $quickdial);
-    }
-    
-    ob_start();
-        imagejpeg($bgImage);
-        $content = ob_get_contents();
-    ob_end_clean();
-    imagedestroy($bgImage);
-
-    return $content;
-}
-
-/**
- * Uploads background image to fritzbox
+ * upload background image to fritzbox
  * 
- * @param resource $image
+ * @param array $quickdials
  * @param array $config
  * @return void
  * @throws \Exception
  */
-function uploadBackgroundImage($image, array $config)
+function uploadBackgroundImage($quickdials, array $config)
 {
-    $options = $config['fritzbox'];
-    if (!isset($options['fritzfons'])) {
+    if (!isset($config['fritzfons'])) {
         return;
     }
+    $image = new BGimage();
+    if ($image->getImage() == false){
+        return;
+    }
+    $backgroundImage = $image->getBackgroundImage ($quickdials);
+   
     $boundary = '--' . sha1(uniqid());
     $contentStr = 'Content-Disposition: form-data; name=';
-    
-    $fritz = new Api($options['url']);
-    $fritz->setAuth($options['user'], $options['password']);
-    $fritz->mergeClientOptions($options['http'] ?? []);
+
+    $fritz = new Api($config['url']);
+    $fritz->setAuth($config['user'], $config['password']);
+    $fritz->mergeClientOptions($config['http'] ?? []);
     $fritz->login();
     
     $body = '';
@@ -664,7 +601,7 @@ function uploadBackgroundImage($image, array $config)
         'PhonebookEntryId' => '',
     ];
 
-    foreach ($options['fritzfons'] as $fritzfon) {
+    foreach ($config['fritzfons'] as $fritzfon) {
         $formfields['PhonebookEntryId'] = $fritzfon;
 
         foreach ($formfields as $key => $value) {
@@ -678,7 +615,7 @@ function uploadBackgroundImage($image, array $config)
         $content = $boundary . PHP_EOL .
                     $contentStr . '"PhonebookPictureFile"' . PHP_EOL .
                     'Content-Type: image/jpeg' . PHP_EOL . PHP_EOL .
-                    $image . PHP_EOL .
+                    $backgroundImage . PHP_EOL .
                     $boundary;
         $body = $body . $content;
 
