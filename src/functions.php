@@ -568,8 +568,8 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
 /**
  * creates an image based on a phone keypad with names assoziated to the quickdial numbers
  *  
- * @param array §quickdials
- * @return resource
+ * @param array $quickdials
+ * @return string|bool 
  */
 function getBackgroundImage ($quickdials)
 {
@@ -579,7 +579,10 @@ function getBackgroundImage ($quickdials)
     $darkgrey = imagecolorallocate($bgImage, 109, 110, 112);
     $lightblue = imagecolorallocate($bgImage, 38, 142, 223);
     $darkblue = imagecolorallocate($bgImage, 0, 110, 192);
-    
+    $posX = 1;
+    $posY = 1;
+
+
     foreach ($quickdials as $key => $quickdial) {
         switch ($key) {
             case 1:
