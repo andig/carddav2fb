@@ -551,7 +551,7 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
     foreach ($xmlPhonebook->phonebook->contact as $contact) {
         foreach ($contact->telephony->number as $number) {
             if (isset($number->attributes()->quickdial)) {
-                $parts = explode (', ', $contact->person->realName);
+                $parts = explode(', ', $contact->person->realName);
                 if (count($parts) !== 2) {                     // if the name was not separated by a comma (no first and last name) 
                     $name = $contact->person->realName;       // fullName
                 }
@@ -567,41 +567,26 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
 }
 
 /**
- * upload background image to fritzbox
+ * Returns a well-formed body string, which is accepted by the FRITZ!Box for uploading
+ * a background image. Guzzle's multipart option does not work on this interface. If
+ * this changes, this function can be replaced.
  * 
- * @param array $quickdials
- * @param array $config
- * @return void
- * @throws \Exception
+ * @param string $sID
+ * @param string $phone
+ * @param string $image
+ * @return string
  */
-function uploadBackgroundImage($quickdials, $phone, array $config)
+function getBody($sID, $phone, $image)
 {
-    if (!isset($config['fritzfons'])) {
-        return;
-    }
-    $image = new BGimage();
-    if ($image->getImage() == false){
-        return;
-    }
-    $backgroundImage = $image->getBackgroundImage ($quickdials);
-   
-    $boundary = '--' . sha1(uniqid());
     $contentStr = 'Content-Disposition: form-data; name=';
-
-    $fritz = new Api($config['url']);
-    $fritz->setAuth($config['user'], $config['password']);
-    $fritz->mergeClientOptions($config['http'] ?? []);
-    $fritz->login();
-    
+    $boundary = '--' . sha1(uniqid());
     $body = '';
     $formfields = [
-        'sid' => $fritz->getSID(),
-        'PhonebookId' => '255',
-        'PhonebookType' => '1',
-        'PhonebookEntryId' => '',
+        'sid' => $sID,
+        'PhonebookId' => '255',         // internal numbers are stored in this partikular phonebook
+        'PhonebookType' => '1',         // is just like that
+        'PhonebookEntryId' => $phone,   // picks up the internal phone number for DECT handhelds (610 - 615)
     ];
-
-    $formfields['PhonebookEntryId'] = $phone;
 
     foreach ($formfields as $key => $value) {
         $content = $boundary . PHP_EOL .
@@ -614,12 +599,52 @@ function uploadBackgroundImage($quickdials, $phone, array $config)
     $content = $boundary . PHP_EOL .
                 $contentStr . '"PhonebookPictureFile"' . PHP_EOL .
                 'Content-Type: image/jpeg' . PHP_EOL . PHP_EOL .
-                $backgroundImage . PHP_EOL .
+                $image . PHP_EOL .                // JPEG image string
                 $boundary;
-    $body = $body . $content;
 
-    $result = $fritz->postImage($body);
-    if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt') === false) {
-        throw new \Exception('Upload failed');
+    return $body . $content;
+}
+
+/**
+ * upload background image to fritzbox
+ * 
+ * @param array $quickdials
+ * @param array $config
+ * @return void
+ * @throws \Exception
+ */
+function uploadBackgroundImage($phonebook, array $config)
+{
+    $quickdials = getQuickdials($phonebook);
+    if (!count($quickdials)) {
+        return;
+    }
+    $numberRange = range(strval(610), strval(615));     // up to six handhelds can be registered
+    $phones = array_slice($config['fritzfons'], 0, 6);  // only the first six numbers are considered
+
+    // assamble background image
+    $image = new BGimage();
+    $backgroundImage = $image->getBackgroundImage($quickdials);
+
+    // http request preconditions
+    $fritz = new Api($config['url']);
+    $fritz->setAuth($config['user'], $config['password']);
+    $fritz->mergeClientOptions($config['http'] ?? []);
+
+    $fritz->login();
+
+    foreach ($phones as $phone) {
+        if (!in_array($phone, $numberRange)) {             // the internal numbers must be in this number range
+            continue;
+        }
+        error_log(sprintf("Uploading background image to Fritz!Fon #%s", $phone));
+        $body = getBody($fritz->getSID(), $phone, $backgroundImage);
+        $result = $fritz->postImage($body);
+        if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt')) {
+            error_log('Successful uploaded');
+        }
+        else {
+            error_log('Upload failed');
+        }
     }
 }

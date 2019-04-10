@@ -68,7 +68,7 @@ class Api
                 'filename' => $file['filename'],
                 'contents' => $file['content'],
                 'headers' => [
-                    'Content-Type' => $file['type'],
+                   'Content-Type' => $file['type'],
                 ],
             ];
         }
@@ -82,7 +82,8 @@ class Api
     }
 
     /**
-     * image upload
+     * image upload to FRITZ!Box. Guzzle's multipart option does not work on
+     * this interface. If this changes, this function can be deleted
      *
      * @param string $body
      * @return string POST result

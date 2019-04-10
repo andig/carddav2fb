@@ -15,7 +15,7 @@ This is an entirely simplified version of https://github.com/jens-maus/carddav2f
   * automatically preserves QuickDial and Vanity attributes of phone numbers
     set in FRITZ!Box Web GUI. Works without config. (Hint: If you used the
     old way of configuring your CardDav server with X-FB-QUICKDIAL /X-FB-VANITY, then your old config is respected and this new automatic feature is skipped).
-  * generates an image with keypad and designated quickdial numbers, which can be uploaded to designated handhelds (works only with FRITZ!Fon C4 or C5)
+  * generates an image with keypad and designated quickdial numbers, which can be uploaded to designated handhelds (see details below)
 
 ## Requirements
 
@@ -52,6 +52,14 @@ Get help for a command:
   * ftp access is activ [Heimnetz -> Speicher (NAS) -> Heimnetzfreigabe]
   * you use an standalone user (NOT! dslf-config) which has explicit permissions for FRITZ!Box settings, access to NAS content and read/write permission to all available memory [System -> FRITZ!Box-Benutzer -> [user] -> Berechtigungen]
 
+## Precondition for using the background image upload
+
+  * works only with FRITZ!Fon C4 or C5
+  * settings in FRITZ!Fon: Einstellungen -> Anzeige -> Startbildschirme -> Klassisch -> Optionen -> Hintergrundbild
+  * assignment is made via the internal number of the handheld in 'fritzfon'
+  * internal number have to be between '610' and '619', no '**'-prefix
+  * since only max. six DECT handhelds can be registered, only the first six entries will be considered
+  
 ## Debugging
 
 For debugging please set your config.php to

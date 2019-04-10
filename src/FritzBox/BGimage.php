@@ -11,6 +11,9 @@ use Andig\FritzBox\Api;
 
 class BGimage
 {
+
+    const ASSETS = './assets/';
+
     /** @var  resource */
     protected $bgImage;
 
@@ -23,9 +26,9 @@ class BGimage
 
     public function __construct()
     {
-        $this->bgImage = $this->getMasterImage('./src/img/keypad.jpg');
+        $this->bgImage = $this->getMasterImage(self::ASSETS . 'keypad.jpg');
         putenv('GDFONTPATH=' . realpath('.'));
-        $this->setFont ('/src/img/impact');
+        $this->setFont(self::ASSETS . 'impact');
         $this->setTextcolor(38, 142, 223);           // light blue from Fritz!Box GUI
     }
 
@@ -42,7 +45,7 @@ class BGimage
     public function getMasterImage(string $path)
     {
         $masterImage = imagecreatefromjpeg($path);
-        if ($masterImage == false) {
+        if (!$masterImage) {
             throw new \Exception('Cannot open master image file');
         }
         return $masterImage;
@@ -78,15 +81,15 @@ class BGimage
     }
 
     /**
-     * creates an image based on a phone keypad with names assoziated to the quickdial numbers
+     * creates an image based on a phone keypad with names assoziated to the quickdial numbers 1 to 9
      *  
      * @param array $quickdials
      * @return string|bool 
      */
-    public function getBackgroundImage ($quickdials)
+    public function getBackgroundImage($quickdials)
     {
-        $posX = 1;
-        $posY = 1;
+        $posX = 0;
+        $posY = 0;
 
         foreach ($quickdials as $key => $quickdial) {
             switch ($key) {
@@ -126,6 +129,8 @@ class BGimage
                 case 9:
                     $posY = 272;
                     break;
+                default:          // all values > 9 with no keypad relation
+                    continue 2;
             }
             imagettftext($this->bgImage, 20, 0, $posX, $posY, $this->textColor, $this->font, $quickdial);
         }
