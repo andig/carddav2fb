@@ -48,17 +48,17 @@ Get help for a command:
 
 ## Precondition for using image upload (command -i)
 
+  * works only with FRITZ!Fon C4 or C5 handhelds
   * your memory (USB stick) is indexed [Heimnetz -> Speicher (NAS) -> Speicher an der FRITZ!Box]
   * ftp access is activ [Heimnetz -> Speicher (NAS) -> Heimnetzfreigabe]
   * you use an standalone user (NOT! dslf-config) which has explicit permissions for FRITZ!Box settings, access to NAS content and read/write permission to all available memory [System -> FRITZ!Box-Benutzer -> [user] -> Berechtigungen]
 
 ## Precondition for using the background image upload
 
-  * works only with FRITZ!Fon C4 or C5
+  * works only with FRITZ!Fon C4 or C5 handhelds
   * settings in FRITZ!Fon: Einstellungen -> Anzeige -> Startbildschirme -> Klassisch -> Optionen -> Hintergrundbild
-  * assignment is made via the internal number of the handheld in 'fritzfon'
-  * internal number have to be between '610' and '619', no '**'-prefix
-  * since only max. six DECT handhelds can be registered, only the first six entries will be considered
+  * assignment is made via the internal number(s) of the handheld(s) in the 'fritzfons'-array in config.php 
+  * internal number have to be between '610' and '615', no '**'-prefix
   
 ## Debugging
 
