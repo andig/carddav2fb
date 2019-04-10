@@ -53,7 +53,7 @@ class BGimage
 
     /**
      * set a new font
-     * @param string $fontFile
+     * @param string $path
      */
     public function setFont(string $path)
     {

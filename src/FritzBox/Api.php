@@ -68,7 +68,7 @@ class Api
                 'filename' => $file['filename'],
                 'contents' => $file['content'],
                 'headers' => [
-                   'Content-Type' => $file['type'],
+                    'Content-Type' => $file['type'],
                 ],
             ];
         }

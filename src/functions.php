@@ -608,7 +608,7 @@ function getBody($sID, $phone, $image)
 /**
  * upload background image to fritzbox
  * 
- * @param array $quickdials
+ * @param array $phonebook
  * @param array $config
  * @return void
  * @throws \Exception
