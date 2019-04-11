@@ -567,51 +567,11 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
 }
 
 /**
- * Returns a well-formed body string, which is accepted by the FRITZ!Box for uploading
- * a background image. Guzzle's multipart option does not work on this interface. If
- * this changes, this function can be replaced.
- * 
- * @param string $sID
- * @param string $phone
- * @param string $image
- * @return string
- */
-function getBody($sID, $phone, $image)
-{
-    $contentStr = 'Content-Disposition: form-data; name=';
-    $boundary = '--' . sha1(uniqid());
-    $body = '';
-    $formfields = [
-        'sid' => $sID,
-        'PhonebookId' => '255',         // internal numbers are stored in this partikular phonebook
-        'PhonebookType' => '1',         // is just like that
-        'PhonebookEntryId' => $phone,   // picks up the internal phone number for DECT handhelds (610 - 615)
-    ];
-
-    foreach ($formfields as $key => $value) {
-        $content = $boundary . PHP_EOL .
-                    $contentStr . '"' . $key . '"' . PHP_EOL .
-                    'Content-Length: ' . strlen($value) . PHP_EOL . PHP_EOL .
-                    $value . PHP_EOL;
-        $body = $body . $content;
-    }
-
-    $content = $boundary . PHP_EOL .
-                $contentStr . '"PhonebookPictureFile"' . PHP_EOL .
-                'Content-Type: image/jpeg' . PHP_EOL . PHP_EOL .
-                $image . PHP_EOL .                // JPEG image string
-                $boundary;
-
-    return $body . $content;
-}
-
-/**
  * upload background image to fritzbox
  * 
  * @param SimpleXMLElement $phonebook
  * @param array $config
  * @return void
- * @throws \Exception
  */
 function uploadBackgroundImage($phonebook, array $config)
 {
@@ -619,32 +579,6 @@ function uploadBackgroundImage($phonebook, array $config)
     if (!count($quickdials)) {
         return;
     }
-    $numberRange = range(strval(610), strval(615));     // up to six handhelds can be registered
-    $phones = array_slice($config['fritzfons'], 0, 6);  // only the first six numbers are considered
-
-    // assamble background image
     $image = new BGimage();
-    $backgroundImage = $image->getBackgroundImage($quickdials);
-
-    // http request preconditions
-    $fritz = new Api($config['url']);
-    $fritz->setAuth($config['user'], $config['password']);
-    $fritz->mergeClientOptions($config['http'] ?? []);
-
-    $fritz->login();
-
-    foreach ($phones as $phone) {
-        if (!in_array($phone, $numberRange)) {             // the internal numbers must be in this number range
-            continue;
-        }
-        error_log(sprintf("Uploading background image to Fritz!Fon #%s", $phone));
-        $body = getBody($fritz->getSID(), $phone, $backgroundImage);
-        $result = $fritz->postImage($body);
-        if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt')) {
-            error_log('Successful uploaded');
-        }
-        else {
-            error_log('Upload failed');
-        }
-    }
+    $image->uploadImage($quickdials, $config);
 }
