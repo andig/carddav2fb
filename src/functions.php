@@ -391,7 +391,7 @@ function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $config)
     $fritz->login();
 
     if (!phoneNumberAttributesSet($xmlPhonebook)) {
-        $xmlOldPhoneBook = downloadPhonebook($fritz, $config);
+        $xmlOldPhoneBook = downloadPhonebook($options, $config['phonebook']);
         if ($xmlOldPhoneBook) {
             $attributes = getPhoneNumberAttributes($xmlOldPhoneBook);
             $xmlPhonebook = mergePhoneNumberAttributes($xmlPhonebook, $attributes);
@@ -423,23 +423,30 @@ function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $config)
 /**
  * Downloads the phone book from Fritzbox
  *
- * @param   Api   $fritz
- * @param   array $config
+ * @param   array $fritzbox
+ * @param   array $phonebook
  * @return  SimpleXMLElement|bool with the old existing phonebook
  */
-function downloadPhonebook(Api $fritz, array $config)
+function downloadPhonebook(array $fritzbox, array $phonebook)
 {
+
+    $fritz = new Api($fritzbox['url']);
+    $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
+    $fritz->mergeClientOptions($fritzbox['http'] ?? []);
+    $fritz->login();
+
     $formfields = [
-        'PhonebookId' => $config['phonebook']['id'],
-        'PhonebookExportName' => $config['phonebook']['name'],
+        'PhonebookId' => $phonebook['id'],
+        'PhonebookExportName' => $phonebook['name'],
         'PhonebookExport' => "",
     ];
     $result = $fritz->postFile($formfields, []); // send the command to load existing phone book
     if (substr($result, 0, 5) !== "<?xml") {
-        error_log("ERROR: Could not load phonebook with ID=".$config['phonebook']['id']);
+        error_log("ERROR: Could not load phonebook with ID=".$phonebook['id']);
         return false;
     }
     $xmlPhonebook = simplexml_load_string($result);
+    
     return $xmlPhonebook;
 }
 

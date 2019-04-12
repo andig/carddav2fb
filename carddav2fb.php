@@ -13,7 +13,8 @@ $app->addCommands(array(
     new RunCommand(),
     new DownloadCommand(),
     new ConvertCommand(),
-    new UploadCommand()
+    new UploadCommand(),
+    new BackgroundCommand()
 ));
 
 $app->run();
