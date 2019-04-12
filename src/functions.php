@@ -51,7 +51,7 @@ function download(Backend $backend, $substitutes, callable $callback=null): arra
  * @param string $password
  * @param string $directory
  * @param boolean $secure
- * @return mixed false or stream of ftp connection 
+ * @return mixed false or stream of ftp connection
  */
 function getFtpConnection($url, $user, $password, $directory, $secure)
 {
@@ -552,11 +552,10 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
         foreach ($contact->telephony->number as $number) {
             if (isset($number->attributes()->quickdial)) {
                 $parts = explode(', ', $contact->person->realName);
-                if (count($parts) !== 2) {                     // if the name was not separated by a comma (no first and last name) 
-                    $name = $contact->person->realName;       // fullName
-                }
-                else {
-                    $name = $parts[1];                         // firstname
+                if (count($parts) !== 2) {                  // if the name was not separated by a comma (no first and last name)
+                    $name = $contact->person->realName;     // fullName
+                } else {
+                    $name = $parts[1];                      // firstname
                 }
                 $name = preg_replace('/Dr. /', '', $name);
                 $quickdialNames[(string)$number->attributes()->quickdial] = substr($name, 0, 10);

@@ -53,7 +53,7 @@ Get help for a command:
   * ftp access is activ [Heimnetz -> Speicher (NAS) -> Heimnetzfreigabe]
   * you use an standalone user (NOT! dslf-config) which has explicit permissions for FRITZ!Box settings, access to NAS content and read/write permission to all available memory [System -> FRITZ!Box-Benutzer -> [user] -> Berechtigungen]
 
-## Precondition for using the background image upload
+## Precondition for using the background image upload (command -b)
 
   * works only with FRITZ!Fon C4 or C5 handhelds
   * settings in FRITZ!Fon: Einstellungen -> Anzeige -> Startbildschirme -> Klassisch -> Optionen -> Hintergrundbild

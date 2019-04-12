@@ -18,7 +18,8 @@ class RunCommand extends Command
     {
         $this->setName('run')
             ->setDescription('Download, convert and upload - all in one')
-            ->addOption('image', 'i', InputOption::VALUE_NONE, 'download images');
+            ->addOption('image', 'i', InputOption::VALUE_NONE, 'download images')
+            ->addOption('background', 'b', InputOption::VALUE_NONE, 'upload background image');
 
         $this->addConfig();
     }
@@ -99,8 +100,7 @@ class RunCommand extends Command
         error_log("Successful uploaded new Fritz!Box phonebook");
 
         // uploading background image
-        if (count($this->config['fritzbox']['fritzfons'])) {    // an internal number in this value determines ...
-                                                                // ... whether an upload is to be made or not
+        if ($input->getOption('background') && count($this->config['fritzbox']['fritzfons'])) {
             uploadBackgroundImage($xmlPhonebook, $this->config['fritzbox']);
         }
     }

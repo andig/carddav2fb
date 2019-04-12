@@ -191,7 +191,7 @@ EOD;
 
     /**
      * upload background image to FRITZ!Box
-     * 
+     *
      * @param array $quickdials
      * @param array $config
      */
@@ -219,11 +219,9 @@ EOD;
             $result = $fritz->postImage($body);
             if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt')) {
                 error_log('Successful uploaded');
-            }
-            else {
+            } else {
                 error_log('Upload failed');
             }
         }
     }
-
 }
