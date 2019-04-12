@@ -48,7 +48,7 @@ Get help for a command:
 
 Only upload your quickdial numbers as a background image to FRITZ!Fon (nothing else!)
 
-    php carddav2fb.php background
+    php carddav2fb.php background-image
 
 ## Precondition for using image upload (command -i)
 

@@ -9,7 +9,7 @@ use Andig\FritzBox\Api;
  * @license MIT
  */
 
-class BGimage
+class BackgroundImage
 {
 
     const ASSETS = './assets/';

@@ -6,7 +6,7 @@ use Andig\CardDav\Backend;
 use Andig\Vcard\Parser;
 use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
-use Andig\FritzBox\BGimage;
+use Andig\FritzBox\BackgroundImage;
 use \SimpleXMLElement;
 use \stdClass;
 
@@ -585,6 +585,6 @@ function uploadBackgroundImage($phonebook, array $config)
     if (!count($quickdials)) {
         return;
     }
-    $image = new BGimage();
+    $image = new BackgroundImage();
     $image->uploadImage($quickdials, $config);
 }

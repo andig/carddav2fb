@@ -16,7 +16,7 @@ class BackgroundCommand extends Command
 
     protected function configure()
     {
-        $this->setName('backgroundImage')
+        $this->setName('background-image')
             ->setDescription('Generate an upload of a background image from quick dial numbers');
 
         $this->addConfig();
