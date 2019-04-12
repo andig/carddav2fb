@@ -16,8 +16,8 @@ class BackgroundCommand extends Command
 
     protected function configure()
     {
-        $this->setName('background')
-            ->setDescription('Uploads a Fritz!Fon background image from quickdial numbers');
+        $this->setName('BackgroundImage')
+            ->setDescription('Uploads a Fritz!Fon background-image from quickdial numbers');
 
         $this->addConfig();
     }
@@ -25,7 +25,7 @@ class BackgroundCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->loadConfig($input);
-    
+
         // uploading background image
         if (count($this->config['fritzbox']['fritzfons'])) {
             error_log('Downloading FRITZ!Box phonebook');

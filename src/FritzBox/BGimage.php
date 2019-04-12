@@ -19,7 +19,7 @@ class BGimage
 
     /** @var  string */
     protected $font;
-    
+
     /** @var int */
     protected $textColor;
 
@@ -36,7 +36,7 @@ class BGimage
     {
         imagedestroy($this->bgImage);
     }
-    
+
     /**
      * get master image
      * @param string $path
@@ -82,9 +82,9 @@ class BGimage
 
     /**
      * creates an image based on a phone keypad with names assoziated to the quickdial numbers 1 to 9
-     *  
+     *
      * @param array $quickdials
-     * @return string|bool 
+     * @return string|bool
      */
     private function getBackgroundImage($quickdials)
     {
@@ -98,7 +98,7 @@ class BGimage
                 case 7:
                     $posX = 20;
                     break;
-                
+
                 case 2:
                 case 5:
                 case 8:
@@ -117,13 +117,13 @@ class BGimage
                 case 3:
                     $posY = 74;
                     break;
-                
+
                 case 4:
                 case 5:
                 case 6:
                     $posY = 172;
                     break;
-            
+
                 case 7:
                 case 8:
                 case 9:
@@ -145,7 +145,7 @@ class BGimage
      * Returns a well-formed body string, which is accepted by the FRITZ!Box for uploading
      * a background image. Guzzle's multipart option does not work on this interface. If
      * this changes, this function can be replaced.
-     * 
+     *
      * @param string $sID
      * @param string $phone
      * @param string $image

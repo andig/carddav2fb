@@ -104,7 +104,7 @@ function uploadImages(array $vcards, array $config, array $phonebook, callable $
     // Prepare FTP connection
     $secure = @$config['plainFTP'] ? $config['plainFTP'] : false;
     $ftp_conn = getFtpConnection($config['url'], $config['user'], $config['password'], $config['fonpix'], $secure);
-    
+
     // Build up dictionary to look up UID => current FTP image file
     if (false === ($ftpFiles = ftp_nlist($ftp_conn, "."))) {
         $ftpFiles = [];
@@ -446,7 +446,7 @@ function downloadPhonebook(array $fritzbox, array $phonebook)
         return false;
     }
     $xmlPhonebook = simplexml_load_string($result);
-    
+
     return $xmlPhonebook;
 }
 
@@ -574,7 +574,7 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
 
 /**
  * upload background image to fritzbox
- * 
+ *
  * @param SimpleXMLElement $phonebook
  * @param array $config
  * @return void
