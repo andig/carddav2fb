@@ -28,7 +28,7 @@ class BackgroundImage
     {
         $this->bgImage = $this->getImageAsset(self::ASSETS . 'keypad.jpg');
         putenv('GDFONTPATH=' . realpath('.'));
-        $this->setFont(self::ASSETS . 'impact');
+        $this->setFont(self::ASSETS . 'impact.ttf');
         $this->setTextcolor(38, 142, 223);           // light blue from Fritz!Box GUI
     }
 
