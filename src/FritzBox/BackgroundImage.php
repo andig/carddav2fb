@@ -26,7 +26,7 @@ class BackgroundImage
 
     public function __construct()
     {
-        $this->bgImage = $this->getMasterImage(self::ASSETS . 'keypad.jpg');
+        $this->bgImage = $this->getImageAsset(self::ASSETS . 'keypad.jpg');
         putenv('GDFONTPATH=' . realpath('.'));
         $this->setFont(self::ASSETS . 'impact');
         $this->setTextcolor(38, 142, 223);           // light blue from Fritz!Box GUI
@@ -34,21 +34,22 @@ class BackgroundImage
 
     public function __destruct()
     {
-        imagedestroy($this->bgImage);
+        if (isset($this->bgImage)) {
+            imagedestroy($this->bgImage);
+        }
     }
 
     /**
-     * get master image
+     * Get image as resource
      * @param string $path
-     * @return resource|bool
+     * @return resource
      */
-    public function getMasterImage(string $path)
+    public function getImageAsset(string $path): resource
     {
-        $masterImage = imagecreatefromjpeg($path);
-        if (!$masterImage) {
+        if (false === ($img = imagecreatefromjpeg($path))) {
             throw new \Exception('Cannot open master image file');
         }
-        return $masterImage;
+        return $img;
     }
 
     /**
@@ -134,6 +135,7 @@ class BackgroundImage
             }
             imagettftext($this->bgImage, 20, 0, $posX, $posY, $this->textColor, $this->font, $quickdial);
         }
+
         ob_start();
         imagejpeg($this->bgImage, null, 100);
         $content = ob_get_clean();
@@ -214,11 +216,14 @@ EOD;
             if (!in_array($phone, $numberRange)) {             // the internal numbers must be in this number range
                 continue;
             }
+
             error_log(sprintf("Uploading background image to Fritz!Fon #%s", $phone));
+
             $body = $this->getBody($fritz->getSID(), $phone, $backgroundImage);
             $result = $fritz->postImage($body);
+
             if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt')) {
-                error_log('Successful uploaded');
+                error_log('Upload successful');
             } else {
                 error_log('Upload failed');
             }
