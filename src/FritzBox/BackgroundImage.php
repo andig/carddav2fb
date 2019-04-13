@@ -44,7 +44,7 @@ class BackgroundImage
      * @param string $path
      * @return resource
      */
-    public function getImageAsset(string $path): resource
+    public function getImageAsset(string $path)
     {
         if (false === ($img = imagecreatefromjpeg($path))) {
             throw new \Exception('Cannot open master image file');
