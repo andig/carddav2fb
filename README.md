@@ -46,28 +46,42 @@ Get help for a command:
 
     ./carddav2fb run -h
 
-#### Preconditions
+### Upload contact pictures
+
+Uploading can also be included in uploading phonebook:
+
+    ./carddav2fb run -i
+
+#### Settings
 
   * memory (USB stick) is indexed [Heimnetz -> Speicher (NAS) -> Speicher an der FRITZ!Box]
   * ftp access is active [Heimnetz -> Speicher (NAS) -> Heimnetzfreigabe]
+
+#### Preconditions
+
+  * requires FRITZ!Fon C4 or C5 handhelds
   * you use an standalone user (NOT! dslf-config) which has explicit permissions for FRITZ!Box settings, access to NAS content and read/write permission to all available memory [System -> FRITZ!Box-Benutzer -> [user] -> Berechtigungen]
 
 <img align="right" src="assets/fritzfon.png"/>
 
 ### Upload Fritz!FON background image
 
-Using the `background-image` command it is possible to upload the quickdial numbers as background image to FRITZ!Fon (nothing else!)
+The background image will be uploaded during
+
+    ./carddav2fb run
+
+Alternativly using the `background-image` command it is possible to upload only the background image to FRITZ!Fon (nothing else!)
 
     ./carddav2fb background-image
 
-Uploading can also be included in uploading phonebook:
+#### Settings
 
-    ./carddav2fb run -i
+  * FRITZ!Fon: Einstellungen -> Anzeige -> Startbildschirme -> Klassisch -> Optionen -> Hintergrundbild
 
 #### Preconditions
 
   * requires FRITZ!Fon C4 or C5 handhelds
-  * settings in FRITZ!Fon: Einstellungen -> Anzeige -> Startbildschirme -> Klassisch -> Optionen -> Hintergrundbild
+  * quickdial numbers are set between 1 to 9
   * assignment is made via the internal number(s) of the handheld(s) in the 'fritzfons'-array in config.php 
   * internal number have to be between '610' and '615', no '**'-prefix
 
