@@ -189,7 +189,7 @@ $image
 $boundary--
 EOD;
 
-    return $body;
+        return $body;
     }
 
     /**
