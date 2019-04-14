@@ -11,7 +11,6 @@ use Andig\FritzBox\Api;
 
 class BackgroundImage
 {
-
     const ASSETS = './assets/';
 
     /** @var  resource */
@@ -22,7 +21,6 @@ class BackgroundImage
 
     /** @var int */
     protected $textColor;
-
 
     public function __construct()
     {
