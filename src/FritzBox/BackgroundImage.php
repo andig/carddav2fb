@@ -91,11 +91,10 @@ class BackgroundImage
         $posY = 0;
 
         foreach ($quickdials as $key => $quickdial) {
-            if ($key < 1 || $key > 9) {
+            if ($key < 2 || $key > 9) {
                 continue;
             }
             switch ($key) {
-                case 1:
                 case 4:
                 case 7:
                     $posX = 20;
@@ -114,7 +113,6 @@ class BackgroundImage
                     break;
             }
             switch ($key) {
-                case 1:
                 case 2:
                 case 3:
                     $posY = 74;
