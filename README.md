@@ -77,6 +77,25 @@ For debugging please set your config.php to
 
     'http' => 'debug' => true
 
+## Docker image
+
+The Docker image contains the tool and all its dependencies. A volume
+`/data` contains the configuration files. If the configuration is
+missing, the Docker entrypoint will abort with an error message and copy
+an example file to the volume.
+
+There are two ways to use the image:
+
+    docker run --rm -v ./carddav2fb-config:/data carddav2fb command...
+
+will execute a single command (and remove the created container
+afterwards).
+
+Without a command, the container entrypoint will enter an endless loop,
+repeatedly executing `carddav2fb run` in given intervals. This allows
+automatic, regular updates of your FritzBox's phonebook.
+
+
 ## License
 This script is released under Public Domain, some parts under GNU AGPL or MIT license. Make sure you understand which parts are which.
 

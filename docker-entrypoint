@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+
+if [ ! -f "/data/config.php" ] ; then
+    echo "No carddav2fb config found!"
+    cp /srv/config.example.php /data/
+    echo "Copied config.example.php to /data volume. Please edit and rename to config.php"
+    exit 1
+fi
+if [ "$1" == "" ] ; then
+    if [ -f "/data/config.cron" ] ; then
+        . /data/config.cron
+        while true ; do
+            /srv/carddav2fb run $RUN_OPTIONS
+            sleep $INTERVAL
+        done
+        exit 0
+    else
+        echo "No cron config found!"
+        cp /srv/config.example.cron /data/
+        echo "Copied config.example.cron to /data volume. Please edit and rename to config.cron"
+        exit 1
+    fi
+else
+    cd /srv
+    ./carddav2fb $@
+fi
