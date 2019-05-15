@@ -11,8 +11,6 @@ use Andig\FritzBox\Api;
 
 class BackgroundImage
 {
-    const ASSETS = './assets/';
-
     /** @var  resource */
     protected $bgImage;
 
@@ -24,9 +22,9 @@ class BackgroundImage
 
     public function __construct()
     {
-        $this->bgImage = $this->getImageAsset(self::ASSETS . 'keypad.jpg');
+        $this->bgImage = $this->getImageAsset(dirname(__DIR__, 2) . '/assets/keypad.jpg');
         putenv('GDFONTPATH=' . realpath('.'));
-        $this->setFont(self::ASSETS . 'impact.ttf');
+        $this->setFont(dirname(__DIR__, 2) . '/assets/impact.ttf');
         $this->setTextcolor(38, 142, 223);           // light blue from Fritz!Box GUI
     }
 
@@ -220,9 +218,9 @@ EOD;
             $result = $fritz->postImage($body);
 
             if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt')) {
-                error_log('Upload successful');
+                error_log('Background image upload successful');
             } else {
-                error_log('Upload failed');
+                error_log('Background image upload failed');
             }
         }
     }
