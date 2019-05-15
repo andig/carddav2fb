@@ -583,7 +583,7 @@ function uploadBackgroundImage($phonebook, array $config)
 {
     $quickdials = getQuickdials($phonebook);
     if (!count($quickdials)) {
-        error_log ('No quickdial numbers are set for a background image upload');
+        error_log('No quickdial numbers are set for a background image upload');
         return;
     }
     $image = new BackgroundImage();
