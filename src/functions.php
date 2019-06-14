@@ -454,8 +454,8 @@ function downloadPhonebook(array $fritzbox, array $phonebook)
 /**
  * Get quickdial and vanity special attributes from given XML phone book
  *
- * @param   SimpleXMLElement                $xmlPhonebook
- * @return  array|array<string, mixed>     [] or map with {phonenumber@CardDavUID}=>SimpleXMLElement-Attributes
+ * @param SimpleXMLElement $xmlPhonebook
+ * @return array an array of special attributes with CardDAV UID as key
  */
 function getPhoneNumberAttributes(SimpleXMLElement $xmlPhonebook)
 {
@@ -463,78 +463,62 @@ function getPhoneNumberAttributes(SimpleXMLElement $xmlPhonebook)
         return [];
     }
 
-    $specialAttributes = [];
-    foreach ($xmlPhonebook->phonebook->contact as $contact) {
-        foreach ($contact->telephony->number as $number) {
-            if ((isset($number->attributes()->quickdial) && $number->attributes()->quickdial >= 0)
-                || (isset($number->attributes()->vanity) && $number->attributes()->vanity != "")) {
-                $key = generateUniqueKey($number, $contact->carddav_uid);
-                $specialAttributes[$key] = $number->attributes();
-            }
+    $numbers = $xmlPhonebook->xpath('//number[@quickdial or @vanity]');
+    foreach ($numbers as $number) {
+        $attributes = [];
+        $attributes['number'] = preg_replace("/[^\+0-9]/", "", (string)$number);
+        foreach ($number->attributes() as $key => $value) {
+            $attributes[(string)$key] = (string)$value;
         }
+        $contact = $number->xpath("./ancestor::contact");
+        $specialAttributes[(string)$contact[0]->carddav_uid] = $attributes;
     }
+
     return $specialAttributes;
 }
 
 /**
  * Restore special attributes (quickdial, vanity) in given target phone book
  *
- * @param   SimpleXMLElement    $xmlTargetPhoneBook
- * @param   array               $attributes [] or map key => attributes
- * @return  SimpleXMLElement    phonebook with restored special attributes
+ * @param SimpleXMLElement $xmlTargetPhoneBook
+ * @param array $attributes array of special attributes
+ * @return SimpleXMLElement phonebook with restored special attributes
  */
 function mergePhoneNumberAttributes(SimpleXMLElement $xmlTargetPhoneBook, array $attributes)
 {
     if (!$attributes) {
         return $xmlTargetPhoneBook;
     }
+
     error_log("Restoring old special attributes (quickdial, vanity)".PHP_EOL);
-    foreach ($xmlTargetPhoneBook->phonebook->contact as $contact) {
-        foreach ($contact->telephony->number as $number) {
-            $key = generateUniqueKey($number, $contact->carddav_uid);
-            if (array_key_exists($key, $attributes)) {
-                foreach (['quickdial','vanity'] as $attribute) {
-                    if (property_exists($attributes[$key], $attribute)) {
-                        $number[$attribute] = (string)$attributes[$key]->$attribute;
+    foreach ($attributes as $key => $values) {
+        if ($contact = $xmlTargetPhoneBook->xpath(sprintf('//contact[carddav_uid = "%s"]', $key))) {
+            if ($phone = $contact[0]->xpath(sprintf("telephony/number[text() = '%s']", $values['number']))) {
+                foreach (['quickdial', 'vanity'] as $attribute) {
+                    if (!empty($values[$attribute])) {
+                        $phone[0]->addAttribute($attribute, $values[$attribute]);
                     }
                 }
             }
         }
     }
-    return $xmlTargetPhoneBook;
-}
 
-/**
- * Build unique key with normalized phone number to lookup phonebook attributes
- * normalizing number means: remove all non-"+" and non-number characters like SPACE, MINUS, SLASH...
- *
- * @param   string  $number
- * @param   string  $carddav_uid
- * @return  string  format: {normalized-phone-number}@{vCard UUID}
- */
-function generateUniqueKey(string $number, string $carddav_uid)
-{
-    return preg_replace("/[^\+0-9]/", "", $number)."@".$carddav_uid;
+    return $xmlTargetPhoneBook;
 }
 
 /**
  * Check if special attributes already set (e.g., via CardDav extension 'X-FB-QUICKDIAL' / 'X-FB-VANITY')
  *
- * @param   SimpleXMLElement    $xmlPhonebook
- * @return  boolean             true if any element already has a special attribute set
+ * @param SimpleXMLElement $xmlPhonebook
+ * @return bool true if any element already has a special attribute set
  */
 function phoneNumberAttributesSet(SimpleXMLElement $xmlPhonebook)
 {
     if (!property_exists($xmlPhonebook, "phonebook")) {
         return false;
     }
-    foreach ($xmlPhonebook->phonebook->contact as $contact) {
-        foreach ($contact->telephony->number as $number) {
-            if (property_exists($number->attributes(), "quickdial")
-                || property_exists($number->attributes(), "vanity")) {
-                return true;
-            }
-        }
+    if (!empty($xmlPhonebook->xpath('//number[@quickdial or @vanity]'))) {
+        return true;
     }
     return false;
 }
@@ -552,19 +536,17 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
     }
 
     $quickdialNames = [];
-    foreach ($xmlPhonebook->phonebook->contact as $contact) {
-        foreach ($contact->telephony->number as $number) {
-            if (isset($number->attributes()->quickdial)) {
-                $parts = explode(', ', $contact->person->realName);
-                if (count($parts) !== 2) {                  // if the name was not separated by a comma (no first and last name)
-                    $name = $contact->person->realName;     // fullName
-                } else {
-                    $name = $parts[1];                      // firstname
-                }
-                $name = preg_replace('/Dr. /', '', $name);
-                $quickdialNames[(string)$number->attributes()->quickdial] = substr($name, 0, 10);
-            }
+    $numbers = $xmlPhonebook->xpath('//number[@quickdial]');
+    foreach ($numbers as $number) {
+        $contact = $number->xpath("./ancestor::contact");
+        $parts = explode(', ', $contact[0]->person->realName);
+        if (count($parts) !== 2) {                      // if the name was not separated by a comma (no first and last name)
+            $name = $contact[0]->person->realName;      // fullName
+        } else {
+            $name = $parts[1];                          // firstname
         }
+        $name = preg_replace('/Dr. /', '', $name);
+        $quickdialNames[(string)$number->attributes()->quickdial] = substr($name, 0, 10);
     }
     ksort($quickdialNames);                                 // ascending: lowest quickdial first
 
