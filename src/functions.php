@@ -463,6 +463,7 @@ function getPhoneNumberAttributes(SimpleXMLElement $xmlPhonebook)
         return [];
     }
 
+    $specialAttributes = [];
     $numbers = $xmlPhonebook->xpath('//number[@quickdial or @vanity]');
     foreach ($numbers as $number) {
         $attributes = [];
