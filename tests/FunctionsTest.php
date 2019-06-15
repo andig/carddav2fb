@@ -94,21 +94,6 @@ EOD;
         return $phonebook;
     }
 
-    public function testGenerateUniqueKey()
-    {
-        $uid = 'abcdef';
-        $number = '0913111111';
-        $this->assertEquals('0913111111@abcdef', Andig\generateUniqueKey($number, $uid));
-    }
-
-    public function testGenerateUniqueKeyWithNormalizedNumber()
-    {
-        $uid = 'abcdef';
-        $number = '09131-111 11';
-        $this->assertEquals('0913111111@abcdef', Andig\generateUniqueKey($number, $uid),
-                            'generateUniqueKey() should normalize phone numbers');
-    }
-
     public function testPhoneNumberAttributesSetFalse()
     {
         $phonebook = $this->defaultPhonebook();
@@ -133,13 +118,13 @@ EOD;
         $attributes = Andig\getPhoneNumberAttributes($phonebook);
 
         // This key should be there
-        $expectedKey = '09131123456@ABCDEFGH-8AA4-4389-A2BE-18A42A61D24D';
+        $expectedKey = 'ABCDEFGH-8AA4-4389-A2BE-18A42A61D24D';
         $this->assertEquals(1, count($attributes));
         $this->assertArrayHasKey($expectedKey, $attributes);
 
         // Now check if expected quickdial / vanity attributes have been found
-        $this->assertEquals('11', $attributes[$expectedKey]->quickdial);
-        $this->assertEquals('AX', $attributes[$expectedKey]->vanity);
+        $this->assertEquals('11', $attributes[$expectedKey]['quickdial']);
+        $this->assertEquals('AX', $attributes[$expectedKey]['vanity']);
     }
 
     public function testMergePhoneNumberAttributes()
