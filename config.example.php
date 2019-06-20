@@ -83,6 +83,7 @@ $config = [
          * The order of the target values (first occurrence) determines the sorting of the telephone numbers
          */
         'phoneTypes' => [
+            'CELL,WORK' => 'work',
             'WORK' => 'work',
             'HOME' => 'home',
             'CELL' => 'mobile',
