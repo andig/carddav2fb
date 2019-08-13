@@ -3,6 +3,7 @@
 namespace Andig\CardDav;
 
 use Andig\Http\ClientTrait;
+use Sabre\VObject\Document;
 use Sabre\VObject\Reader;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
@@ -184,11 +185,11 @@ EOD
      * If elements are declared as to be substituted,
      * the data from possibly linked sources are embedded directly into the vCard
      *
-     * @param   mixed $vcard single parsed vCard
+     * @param   Document $vcard single parsed vCard
      * @param   string $property the property whose value is to be replaced ('LOGO', 'KEY', 'PHOTO' or 'SOUND')
-     * @return  mixed single vCard with embedded value
+     * @return  Document single vCard with embedded value
      */
-    private function embedBase64($vcard, string $property)
+    private function embedBase64(Document $vcard, string $property): Document
     {
         if ($embedded = $this->getLinkedData($vcard->$property)) {      // get the data from the external URL or false
             if ($vcard->VERSION == '3.0') {                             // the different vCard versions must be considered
@@ -243,12 +244,11 @@ EOD
      * ->LASTNAME, ->FIRSTNAME etc. extracted from ->N
      * ->PHOTO with embedded data from linked sources (equal for KEY, LOGO or SOUND)
      *
-     * @param mixed $vcard
-     * @return mixed
+     * @param Document $vcard
+     * @return Document
      */
-    public function enrichVcard($vcard)
+    public function enrichVcard(Document $vcard): Document
     {
-        /** @var \stdClass $vcard */
         if (isset($vcard->FN)) {                                // redundant for downward compatibility
             $vcard->FULLNAME = (string)$vcard->FN;
         }

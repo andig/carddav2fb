@@ -6,6 +6,7 @@ use Andig\CardDav\Backend;
 use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
 use Andig\FritzBox\BackgroundImage;
+use Sabre\VObject\Document;
 use \SimpleXMLElement;
 
 define("MAX_IMAGE_COUNT", 150); // see: https://avm.de/service/fritzbox/fritzbox-7490/wissensdatenbank/publication/show/300_Hintergrund-und-Anruferbilder-in-FRITZ-Fon-einrichten/
@@ -304,11 +305,11 @@ function countFilters(array $filters): int
 /**
  * Check a list of filters against the vcard properties CATEGORIES and/or GROUPS
  *
- * @param mixed $vcard
+ * @param Document $vcard
  * @param array $filters
  * @return bool
  */
-function filtersMatch($vcard, array $filters): bool
+function filtersMatch(Document $vcard, array $filters): bool
 {
     foreach ($filters as $attribute => $values) {
         $param = strtoupper($attribute);
@@ -325,7 +326,7 @@ function filtersMatch($vcard, array $filters): bool
 /**
  * Export cards to fritzbox xml
  *
- * @param mixed[] $cards
+ * @param Document[] $cards
  * @param array $conversions
  * @return SimpleXMLElement     the XML phone book in Fritz Box format
  */

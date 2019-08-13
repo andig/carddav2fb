@@ -4,3 +4,4 @@
 /vendor/
 php-cs-fixer.config
 config.cron
+cache

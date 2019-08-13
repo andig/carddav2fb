@@ -1,0 +1,6 @@
+parameters:
+	inferPrivatePropertyTypeFromConstructor: true
+	universalObjectCratesClasses:
+		- Sabre\VObject\Document
+	ignoreErrors:
+		- '#Property Sabre.VObject.Document::.FULLNAME .Sabre.VObject.Property. does not accept string#'
