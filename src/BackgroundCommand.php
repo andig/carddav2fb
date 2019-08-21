@@ -27,10 +27,16 @@ class BackgroundCommand extends Command
         $this->loadConfig($input);
 
         // uploading background image
-        if (count($this->config['fritzbox']['fritzfons'])) {
+        $savedAttributes = [];
+        if (count($this->config['fritzbox']['fritzfons']) && $this->config['phonebook']['id'] == 0) {
             error_log('Downloading FRITZ!Box phonebook');
             $xmlPhonebook = downloadPhonebook($this->config['fritzbox'], $this->config['phonebook']);
-            uploadBackgroundImage($xmlPhonebook, $this->config['fritzbox']);
+            if (count($savedAttributes = uploadAttributes($xmlPhonebook, $this->config['fritzbox']))) {
+                error_log('Numbers with special attributes saved' . PHP_EOL);
+            } else {                                                    // no attributes are set in the FRITZ!Box or lost
+                $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
+            }
+            uploadBackgroundImage($xmlPhonebook, $savedAttributes, $this->config['fritzbox']);
         }
     }
 }

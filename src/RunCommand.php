@@ -34,6 +34,7 @@ class RunCommand extends Command
         }
 
         // download recent phonebook and save special attributes
+        $savedAttributes = [];
         $recentPhonebook = downloadPhonebook($this->config['fritzbox'], $this->config['phonebook']);
         if ($this->config['phonebook']['id'] == 0) {                            // only the first phonebook has special attributes
             if (count($savedAttributes = uploadAttributes($recentPhonebook, $this->config['fritzbox']))) {

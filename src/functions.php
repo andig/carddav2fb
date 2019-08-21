@@ -572,7 +572,7 @@ function uploadBackgroundImage($phonebook, $attributes, array $config)
  *
  * @param SimpleXMLElement $phonebook
  * @param array $config
- * @return string|void
+ * @return array
  */
 function uploadAttributes($phonebook, $config)
 {
@@ -590,7 +590,7 @@ function uploadAttributes($phonebook, $config)
     fputs($memstream, $rows);
     rewind($memstream);
     if (!ftp_fput($ftp_conn, 'Attributes.csv', $memstream, FTP_BINARY)) {
-        error_log(sprintf('Error uploadind %s!' . PHP_EOL, $csv_filename));
+        error_log('Error uploading Attributes.csv!' . PHP_EOL);
     }
     fclose($memstream);
     ftp_close($ftp_conn);
@@ -602,7 +602,7 @@ function uploadAttributes($phonebook, $config)
  * get saved special attributes from internal FRITZ!Box memory (../FRITZ/mediabox)
  *
  * @param array $config
- * @return array|void
+ * @return array
  */
 function downloadAttributes($config)
 {
@@ -613,10 +613,14 @@ function downloadAttributes($config)
         return [];
     }
 
+    $collums = '';
+    $rows = '';
+    $uid = '';
+    $specialAttributes = [];
+
     $csvFile = fopen('php://temp', 'r+');
     if (ftp_fget($ftp_conn, $csvFile, 'Attributes.csv', FTP_BINARY)) {
         rewind($csvFile);
-        $specialAttributes = [];
         while ($csvRow = fgetcsv($csvFile)) {
             if (!count(array_diff(explode(',', CSV_HEADER), $csvRow))) {    // all CSV_HEADER elements are in csvRow => header line
                 $collums = $csvRow;
@@ -640,10 +644,11 @@ function downloadAttributes($config)
 /**
  * convert special atributes (array of SimpleXMLElement) to string (rows of csv)
  *
- * @param array $arrayOfXML
+ * @param array $specialAttributes
  * @return string csv
  */
-function xmlArrayToCSV($specialAttributes) {
+function xmlArrayToCSV($specialAttributes)
+{
     $row = CSV_HEADER . PHP_EOL;                            // csv header row
     foreach ($specialAttributes as $uid => $values) {
         $row = $row . $uid;                                 // array key first collum
@@ -655,5 +660,6 @@ function xmlArrayToCSV($specialAttributes) {
         }
         $row = $row . PHP_EOL;                              // next row
     }
+
     return $row;
 }
