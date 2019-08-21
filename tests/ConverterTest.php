@@ -164,31 +164,6 @@ class ConverterTest extends TestCase
         $this->assertEquals('fax_work', (string)$faxNumber['type']);
     }
 
-    public function testVanityAndQuickdialNumbers()
-    {
-        unset($this->contact->TEL);
-        $this->contact->add('TEL', '1', ['type' => 'other']);
-        $this->contact->add('TEL', '2', ['type' => 'pref']);
-        $this->contact->{'X-FB-QUICKDIAL'} = 'quickdial';
-        $this->contact->{'X-FB-VANITY'} = 'vanity';
-
-        $res = $this->converter->convert($this->contact);
-        $this->assertCount(1, $res);
-
-        $contact = $res[0];
-        $this->assertCount(2, $contact->telephony->children());
-
-        // first number without pref/vanity
-        $vanityNumber = $contact->telephony->children()[0];
-        $this->assertNull($vanityNumber['quickdial']);
-        $this->assertNull($vanityNumber['vanity']);
-
-        // second number with pref/vanity
-        $vanityNumber = $contact->telephony->children()[1];
-        $this->assertEquals('quickdial', (string)$vanityNumber['quickdial']);
-        $this->assertEquals('vanity', (string)$vanityNumber['vanity']);
-    }
-
     public function testMoreThan10PhoneNumbers()
     {
         unset($this->contact->TEL);

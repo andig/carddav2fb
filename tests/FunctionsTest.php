@@ -94,22 +94,6 @@ EOD;
         return $phonebook;
     }
 
-    public function testPhoneNumberAttributesSetFalse()
-    {
-        $phonebook = $this->defaultPhonebook();
-        $this->assertEquals(false, Andig\phoneNumberAttributesSet($phonebook),
-                            'phoneNumberAttributesSet() should not detect any quickdial / vanity attributes');
-    }
-
-    public function testPhoneNumberAttributesSetTrue()
-    {
-        $phonebook = $this->defaultPhonebook();
-        $phonebook = $this->injectQuickDialAndVanity($phonebook, 0, 0, "11", "AX");
-
-        $this->assertEquals(true, Andig\phoneNumberAttributesSet($phonebook),
-                            'phoneNumberAttributesSet() should detect set quickdial / vanity attributes');
-    }
-
     public function testGetPhoneNumberAttributes()
     {
         $phonebook = $this->defaultPhonebook();

@@ -11,6 +11,7 @@ use Sabre\VObject\Document;
 use \SimpleXMLElement;
 
 define("MAX_IMAGE_COUNT", 150); // see: https://avm.de/service/fritzbox/fritzbox-7490/wissensdatenbank/publication/show/300_Hintergrund-und-Anruferbilder-in-FRITZ-Fon-einrichten/
+define("CSV_HEADER", 'uid,number,id,type,quickdial,vanity,prio,name');
 
 /**
  * Initialize backend from configuration
@@ -384,7 +385,7 @@ function xml_adopt(SimpleXMLElement $to, SimpleXMLElement $from)
  * @param array             $config
  * @return void
  */
-function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $config)
+function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $attributes, array $config)
 {
     $options = $config['fritzbox'];
 
@@ -393,15 +394,8 @@ function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $config)
     $fritz->mergeClientOptions($options['http'] ?? []);
     $fritz->login();
 
-    if (!phoneNumberAttributesSet($xmlPhonebook)) {
-        $xmlOldPhoneBook = downloadPhonebook($options, $config['phonebook']);
-        if ($xmlOldPhoneBook) {
-            $attributes = getPhoneNumberAttributes($xmlOldPhoneBook);
-            $xmlPhonebook = mergePhoneNumberAttributes($xmlPhonebook, $attributes);
-        }
-    } else {
-        error_log("Note: Skipping automatic restore of quickdial/vanity attributes.");
-        error_log("      Are you using X-FB-QUICKDIAL/X-FB-VANITY CardDav extensions?");
+    if ($config['phonebook']['id'] == 0) {                      // only the first phonebook has special attributes
+        $xmlPhonebook = mergePhoneNumberAttributes($xmlPhonebook, $attributes);
     }
 
     $formfields = [
@@ -452,6 +446,19 @@ function downloadPhonebook(array $fritzbox, array $phonebook)
 }
 
 /**
+ * get empty associated array accordig to CSV_HEADER
+ *
+ * @return array
+ */
+function getPlainArray()
+{
+    $csvHeader = explode(',', CSV_HEADER);
+    $dump = array_shift($csvHeader);
+
+    return array_fill_keys($csvHeader, '');
+}
+
+/**
  * Get quickdial and vanity special attributes from given XML phone book
  *
  * @param SimpleXMLElement $xmlPhonebook
@@ -466,12 +473,13 @@ function getPhoneNumberAttributes(SimpleXMLElement $xmlPhonebook)
     $specialAttributes = [];
     $numbers = $xmlPhonebook->xpath('//number[@quickdial or @vanity]');
     foreach ($numbers as $number) {
-        $attributes = [];
+        $attributes = getPlainArray();
         $attributes['number'] = preg_replace("/[^\+0-9]/", "", (string)$number);
         foreach ($number->attributes() as $key => $value) {
             $attributes[(string)$key] = (string)$value;
         }
         $contact = $number->xpath("./ancestor::contact");
+        $attributes['name'] = (string)$contact[0]->person->realName;
         $specialAttributes[(string)$contact[0]->carddav_uid] = $attributes;
     }
 
@@ -508,48 +516,29 @@ function mergePhoneNumberAttributes(SimpleXMLElement $xmlTargetPhoneBook, array 
 }
 
 /**
- * Check if special attributes already set (e.g., via CardDav extension 'X-FB-QUICKDIAL' / 'X-FB-VANITY')
- *
- * @param SimpleXMLElement $xmlPhonebook
- * @return bool true if any element already has a special attribute set
- */
-function phoneNumberAttributesSet(SimpleXMLElement $xmlPhonebook)
-{
-    if (!property_exists($xmlPhonebook, "phonebook")) {
-        return false;
-    }
-    if (!empty($xmlPhonebook->xpath('//number[@quickdial or @vanity]'))) {
-        return true;
-    }
-    return false;
-}
-
-/**
  * Get quickdial number and names as array from given XML phone book
  *
- * @param   SimpleXMLElement                $xmlPhonebook
- * @return  array
+ * @param array $attributes
+ * @return array
  */
-function getQuickdials(SimpleXMLElement $xmlPhonebook)
+function getQuickdials(array $attributes)
 {
-    if (!property_exists($xmlPhonebook, "phonebook")) {
+    if (empty($attributes)) {
         return [];
     }
 
     $quickdialNames = [];
-    $numbers = $xmlPhonebook->xpath('//number[@quickdial]');
-    foreach ($numbers as $number) {
-        $contact = $number->xpath("./ancestor::contact");
-        $parts = explode(', ', $contact[0]->person->realName);
-        if (count($parts) !== 2) {                      // if the name was not separated by a comma (no first and last name)
-            $name = $contact[0]->person->realName;      // fullName
+    foreach ($attributes as $values) {
+        $parts = explode(', ', $values['name']);
+        if (count($parts) !== 2) {                  // if the name was not separated by a comma (no first and last name)
+            $name = $values['name'];                // fullName
         } else {
-            $name = $parts[1];                          // firstname
+            $name = $parts[1];                      // firstname
         }
         $name = preg_replace('/Dr. /', '', $name);
-        $quickdialNames[(string)$number->attributes()->quickdial] = substr($name, 0, 10);
+        $quickdialNames[$values['quickdial']] = substr($name, 0, 10);
     }
-    ksort($quickdialNames);                                 // ascending: lowest quickdial first
+    ksort($quickdialNames);                         // ascending: lowest quickdial # first
 
     return $quickdialNames;
 }
@@ -558,12 +547,13 @@ function getQuickdials(SimpleXMLElement $xmlPhonebook)
  * upload background image to fritzbox
  *
  * @param SimpleXMLElement $phonebook
+ * @param array $attributes
  * @param array $config
  * @return void
  */
-function uploadBackgroundImage($phonebook, array $config)
+function uploadBackgroundImage($phonebook, $attributes, array $config)
 {
-    $quickdials = getQuickdials($phonebook);
+    $quickdials = getQuickdials($attributes);
     if (!count($quickdials)) {
         error_log('No quickdial numbers are set for a background image upload');
         return;
@@ -575,4 +565,95 @@ function uploadBackgroundImage($phonebook, array $config)
 
     $image = new BackgroundImage();
     $image->uploadImage($quickdials, $config);
+}
+
+/**
+ * save special attributes to internal FRITZ!Box memory (../FRITZ/mediabox)
+ *
+ * @param SimpleXMLElement $phonebook
+ * @param array $config
+ * @return string|void
+ */
+function uploadAttributes($phonebook, $config)
+{
+    if (!count($specialAttributes = getPhoneNumberAttributes($phonebook))) {
+        return [];
+    }
+    error_log('Save special attributes from recent FRITZ!Box phonebook!');
+
+    // Prepare FTP connection
+    $secure = @$config['plainFTP'] ? $config['plainFTP'] : false;
+    $ftp_conn = getFtpConnection($config['url'], $config['user'], $config['password'], '/FRITZ/mediabox', $secure);
+    // open a fast in-memory file stream
+    $memstream = fopen('php://memory', 'r+');
+    $rows = xmlArrayToCSV($specialAttributes);
+    fputs($memstream, $rows);
+    rewind($memstream);
+    if (!ftp_fput($ftp_conn, 'Attributes.csv', $memstream, FTP_BINARY)) {
+        error_log(sprintf('Error uploadind %s!' . PHP_EOL, $csv_filename));
+    }
+    fclose($memstream);
+    ftp_close($ftp_conn);
+
+    return $specialAttributes;
+}
+
+/**
+ * get saved special attributes from internal FRITZ!Box memory (../FRITZ/mediabox)
+ *
+ * @param array $config
+ * @return array|void
+ */
+function downloadAttributes($config)
+{
+    // Prepare FTP connection
+    $secure = @$config['plainFTP'] ? $config['plainFTP'] : false;
+    $ftp_conn = getFtpConnection($config['url'], $config['user'], $config['password'], '/FRITZ/mediabox', $secure);
+    if (ftp_size($ftp_conn, 'Attributes.csv') == -1) {
+        return [];
+    }
+
+    $csvFile = fopen('php://temp', 'r+');
+    if (ftp_fget($ftp_conn, $csvFile, 'Attributes.csv', FTP_BINARY)) {
+        rewind($csvFile);
+        $specialAttributes = [];
+        while ($csvRow = fgetcsv($csvFile)) {
+            if (!count(array_diff(explode(',', CSV_HEADER), $csvRow))) {    // all CSV_HEADER elements are in csvRow => header line
+                $collums = $csvRow;
+            } else {
+                foreach ($csvRow as $key => $value) {
+                    if ($key == 0) {
+                        $uid = $value;
+                    } else {
+                        $specialAttributes[$uid][$collums[$key]] = $value;
+                    }
+                }
+            }
+        }
+    }
+    fclose($csvFile);
+    ftp_close($ftp_conn);
+
+    return $specialAttributes;
+}
+
+/**
+ * convert special atributes (array of SimpleXMLElement) to string (rows of csv)
+ *
+ * @param array $arrayOfXML
+ * @return string csv
+ */
+function xmlArrayToCSV($specialAttributes) {
+    $row = CSV_HEADER . PHP_EOL;                            // csv header row
+    foreach ($specialAttributes as $uid => $values) {
+        $row = $row . $uid;                                 // array key first collum
+        foreach ($values as $key => $value) {
+            if ($key == 'name') {
+                $value = '"' . $value . '"';
+            }
+            $row = $row . ',' . $value;                     // values => collums
+        }
+        $row = $row . PHP_EOL;                              // next row
+    }
+    return $row;
 }

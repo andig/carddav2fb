@@ -178,34 +178,10 @@ class Converter
             if (strpos($telTypes, 'FAX') !== false) {
                 $type = 'fax_work';
             }
-
             $addNumber = [
                 'type'   => $type,
                 'number' => (string)$number,
             ];
-
-            /* Add quick dial and vanity numbers if card has xquickdial or xvanity attributes set
-             * A phone number with 'PREF' type is needed to activate the attribute.
-             * For quick dial numbers Fritz!Box will add the prefix **7 automatically.
-             * For vanity numbers Fritz!Box will add the prefix **8 automatically. */
-            foreach (['quickdial', 'vanity'] as $property) {
-                $attr = 'X-FB-' . strtoupper($property);
-                if (!isset($card->$attr)) {
-                    continue;
-                }
-                if (strpos($telTypes, 'PREF') === false) {
-                    continue;
-                }
-                $specialAttribute = (string)$card->$attr;
-                // number unique?
-                if (in_array($specialAttribute, $this->uniqueDials)) {
-                    error_log(sprintf("The %s number >%s< has been assigned more than once (%s)!", $property, $specialAttribute, $number));
-                    continue;
-                }
-                $this->uniqueDials[] = $specialAttribute;                    // keep list of unique numbers
-                $addNumber[$property] = $specialAttribute;
-            }
-
             $phoneNumbers[] = $addNumber;
         }
 

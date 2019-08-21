@@ -33,6 +33,15 @@ class RunCommand extends Command
             $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
         }
 
+        // download recent phonebook and save special attributes
+        $recentPhonebook = downloadPhonebook($this->config['fritzbox'], $this->config['phonebook']);
+        if ($this->config['phonebook']['id'] == 0) {                            // only the first phonebook has special attributes
+            if (count($savedAttributes = uploadAttributes($recentPhonebook, $this->config['fritzbox']))) {
+                error_log('Numbers with special attributes saved' . PHP_EOL);
+            } else {                                                    // no attributes are set in the FRITZ!Box or lost
+                $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
+            }
+        }
         $vcards = $this->downloadAllProviders($output, $input->getOption('image'));
         error_log(sprintf("Downloaded %d vCard(s) in total", count($vcards)));
 
@@ -79,12 +88,12 @@ class RunCommand extends Command
         // upload
         error_log("Uploading");
 
-        uploadPhonebook($xmlPhonebook, $this->config);
+        uploadPhonebook($xmlPhonebook, $savedAttributes, $this->config);
         error_log("Successful uploaded new Fritz!Box phonebook");
 
         // uploading background image
-        if (count($this->config['fritzbox']['fritzfons'])) {
-            uploadBackgroundImage($xmlPhonebook, $this->config['fritzbox']);
+        if (count($this->config['fritzbox']['fritzfons']) && $this->config['phonebook']['id'] == 0) {
+            uploadBackgroundImage($xmlPhonebook, $savedAttributes, $this->config['fritzbox']);
         }
     }
 
