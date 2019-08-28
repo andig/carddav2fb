@@ -37,7 +37,7 @@ class BackgroundCommand extends Command
                 $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
             }
             $xmlPhonebook = mergeAttributes($xmlPhonebook, $savedAttributes);
-            uploadBackgroundImage($xmlPhonebook, $this->config['fritzbox']);
+            uploadBackgroundImage($xmlPhonebook, $savedAttributes, $this->config['fritzbox']);
         } else {
             error_log('No destination phones are defined and/or the first phone book is not selected!');
         }

@@ -184,7 +184,7 @@ class Restorer
         return $row;
     }
 
-        /**
+    /**
      * convert csv line to internal phonbook data
      *
      * @param array $csvRow
