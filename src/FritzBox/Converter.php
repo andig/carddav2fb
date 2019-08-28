@@ -73,6 +73,27 @@ class Converter
     }
 
     /**
+     * convert a phone number if conversions (phoneReplaceCharacters) are set
+     *
+     * @param string $number
+     * @return string $number
+     */
+    public function convertPhonenumber($number)
+    {
+        // check if phone number is a SIP or internal number to avoid unwanted conversions
+        if (filter_var($number, FILTER_VALIDATE_EMAIL) || substr($number, 0, 2) == '**') {
+            return $number;
+        } elseif (count($this->config['phoneReplaceCharacters'])) {
+            $number = str_replace("\xc2\xa0", "\x20", $number);
+            $number = strtr($number, $this->config['phoneReplaceCharacters']);
+            $number = trim(preg_replace('/\s+/', ' ', $number));
+        }
+
+        return $number;
+    }
+
+
+    /**
      * Return a simple array depending on the order of phonetype conversions
      * whose order should determine the sorting of the telephone numbers
      *
@@ -156,16 +177,10 @@ class Converter
         }
 
         $phoneNumbers = [];
-
-        $replaceCharacters = $this->config['phoneReplaceCharacters'] ?? [];
         $phoneTypes = $this->config['phoneTypes'] ?? [];
         foreach ($card->TEL as $key => $number) {
             // format number
-            if (count($replaceCharacters)) {
-                $number = str_replace("\xc2\xa0", "\x20", $number);
-                $number = strtr($number, $replaceCharacters);
-                $number = trim(preg_replace('/\s+/', ' ', $number));
-            }
+            $number = $this->convertPhonenumber($number);
             // get type
             $type = 'other';
             $telTypes = strtoupper($card->TEL[$key]->parameters['TYPE'] ?? '');

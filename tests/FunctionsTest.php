@@ -87,52 +87,6 @@ EOD;
         return simplexml_load_string($xml);
     }
 
-    private function injectQuickDialAndVanity(SimpleXMLElement $phonebook, $contIndex, $numIndex, $qd, $van): SimpleXMLElement
-    {
-        $phonebook->phonebook->contact[$contIndex]->telephony->number[$numIndex]['quickdial'] = $qd;
-        $phonebook->phonebook->contact[$contIndex]->telephony->number[$numIndex]['vanity'] = $van;
-        return $phonebook;
-    }
-
-    public function testGetPhoneNumberAttributes()
-    {
-        $phonebook = $this->defaultPhonebook();
-        $phonebook = $this->injectQuickDialAndVanity($phonebook, 0, 0, "11", "AX");
-
-        $attributes = Andig\getPhoneNumberAttributes($phonebook);
-
-        // This key should be there
-        $expectedKey = 'ABCDEFGH-8AA4-4389-A2BE-18A42A61D24D';
-        $this->assertEquals(1, count($attributes));
-        $this->assertArrayHasKey($expectedKey, $attributes);
-
-        // Now check if expected quickdial / vanity attributes have been found
-        $this->assertEquals('11', $attributes[$expectedKey]['quickdial']);
-        $this->assertEquals('AX', $attributes[$expectedKey]['vanity']);
-    }
-
-    public function testMergePhoneNumberAttributes()
-    {
-        $phonebook = $this->defaultPhonebook();
-        $phonebook = $this->injectQuickDialAndVanity($phonebook, 0, 0, "11", "AX");
-        $phonebook = $this->injectQuickDialAndVanity($phonebook, 1, 1, "22", "AG");
-
-        $attributes = Andig\getPhoneNumberAttributes($phonebook);
-        $newPhoneBook = Andig\mergePhoneNumberAttributes($phonebook, $attributes);
-
-        // Here we expect quickdial & vanity
-        $this->assertEquals('11', $newPhoneBook->phonebook->contact[0]->telephony->number[0]['quickdial']);
-        $this->assertEquals('22', $newPhoneBook->phonebook->contact[1]->telephony->number[1]['quickdial']);
-        $this->assertEquals('AX', $newPhoneBook->phonebook->contact[0]->telephony->number[0]['vanity']);
-        $this->assertEquals('AG', $newPhoneBook->phonebook->contact[1]->telephony->number[1]['vanity']);
-
-        // These contact numbers should NOT have quickdial or vanity
-        $this->assertEquals(false, isset($newPhoneBook->phonebook->contact[0]->telephony->number[1]['quickdial']));
-        $this->assertEquals(false, isset($newPhoneBook->phonebook->contact[1]->telephony->number[0]['quickdial']));
-        $this->assertEquals(false, isset($newPhoneBook->phonebook->contact[0]->telephony->number[1]['vanity']));
-        $this->assertEquals(false, isset($newPhoneBook->phonebook->contact[1]->telephony->number[0]['vanity']));
-    }
-
     public function filtersPropertiesProvider(): array
     {
         return [

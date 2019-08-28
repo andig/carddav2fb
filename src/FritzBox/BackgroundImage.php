@@ -212,7 +212,7 @@ EOD;
                 continue;
             }
 
-            error_log(sprintf("Uploading background image to Fritz!Fon #%s", $phone));
+            error_log(sprintf("Uploading background image to FRITZ!Fon #%s", $phone));
 
             $body = $this->getBody($fritz->getSID(), $phone, $backgroundImage);
             $result = $fritz->postImage($body);

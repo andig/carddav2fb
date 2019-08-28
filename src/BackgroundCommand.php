@@ -31,12 +31,15 @@ class BackgroundCommand extends Command
         if (count($this->config['fritzbox']['fritzfons']) && $this->config['phonebook']['id'] == 0) {
             error_log('Downloading FRITZ!Box phonebook');
             $xmlPhonebook = downloadPhonebook($this->config['fritzbox'], $this->config['phonebook']);
-            if (count($savedAttributes = uploadAttributes($xmlPhonebook, $this->config['fritzbox']))) {
+            if (count($savedAttributes = uploadAttributes($xmlPhonebook, $this->config))) {
                 error_log('Numbers with special attributes saved' . PHP_EOL);
             } else {                                                    // no attributes are set in the FRITZ!Box or lost
                 $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
             }
-            uploadBackgroundImage($xmlPhonebook, $savedAttributes, $this->config['fritzbox']);
+            $xmlPhonebook = mergeAttributes($xmlPhonebook, $savedAttributes);
+            uploadBackgroundImage($xmlPhonebook, $this->config['fritzbox']);
+        } else {
+            error_log('No destination phones are defined and/or the first phone book is not selected!');
         }
     }
 }

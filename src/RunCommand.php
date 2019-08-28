@@ -35,13 +35,12 @@ class RunCommand extends Command
 
         // download recent phonebook and save special attributes
         $savedAttributes = [];
+        error_log("Downloading recent FRITZ!Box phonebook");
         $recentPhonebook = downloadPhonebook($this->config['fritzbox'], $this->config['phonebook']);
-        if ($this->config['phonebook']['id'] == 0) {                            // only the first phonebook has special attributes
-            if (count($savedAttributes = uploadAttributes($recentPhonebook, $this->config['fritzbox']))) {
-                error_log('Numbers with special attributes saved' . PHP_EOL);
-            } else {                                                    // no attributes are set in the FRITZ!Box or lost
-                $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
-            }
+        if (count($savedAttributes = uploadAttributes($recentPhonebook, $this->config))) {
+            error_log('Phone numbers with special attributes saved');
+        } else {                        // no attributes are set in the FRITZ!Box or lost -> try to download them
+            $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
         }
         $vcards = $this->downloadAllProviders($output, $input->getOption('image'));
         error_log(sprintf("Downloaded %d vCard(s) in total", count($vcards)));
@@ -86,11 +85,13 @@ class RunCommand extends Command
             return null;
         }
 
-        // upload
-        error_log("Uploading");
+        // write back saved attributes
+        $xmlPhonebook = mergeAttributes($xmlPhonebook, $savedAttributes);
 
-        uploadPhonebook($xmlPhonebook, $savedAttributes, $this->config);
-        error_log("Successful uploaded new Fritz!Box phonebook");
+        // upload
+        error_log("Uploading new phonebook to FRITZ!Box");
+        uploadPhonebook($xmlPhonebook, $this->config);
+        error_log("Successful uploaded new FRITZ!Box phonebook");
 
         // uploading background image
         if (count($this->config['fritzbox']['fritzfons']) && $this->config['phonebook']['id'] == 0) {

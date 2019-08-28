@@ -16,7 +16,7 @@ class UploadCommand extends Command
     protected function configure()
     {
         $this->setName('upload')
-            ->setDescription('Upload to Fritz!Box')
+            ->setDescription('Upload to FRITZ!Box')
             ->addArgument('filename', InputArgument::REQUIRED, 'filename');
 
         $this->addConfig();
@@ -25,13 +25,19 @@ class UploadCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->loadConfig($input);
+        $savedAttributes = [];
 
         $filename = $input->getArgument('filename');
         $xmlPhonebookStr = file_get_contents($filename);
         $xmlPhonebook = simplexml_load_string($xmlPhonebookStr);
 
-        error_log("Uploading Fritz!Box phonebook");
-        uploadPhonebook($xmlPhonebook, [], $this->config);
-        error_log("Successful uploaded new Fritz!Box phonebook");
+        if ($this->config['phonebook']['id'] == 0) {                // only the first phonebook has special attributes
+            $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
+            $xmlPhonebook = mergeAttributes($xmlPhonebook, $savedAttributes);
+        }
+
+        error_log("Uploading FRITZ!Box phonebook");
+        uploadPhonebook($xmlPhonebook, $this->config);
+        error_log("Successful uploaded new FRITZ!Box phonebook");
     }
 }

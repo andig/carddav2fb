@@ -56,7 +56,7 @@ edit `config.example.php` and save as `config.php`
 
 <img align="right" src="assets/fritzfon.png"/>
 
-### Upload Fritz!FON background image
+### Upload FRITZ!FON background image
 
 Using the `background-image` command it is possible to upload the quickdial numbers as background image to FRITZ!Fon (nothing else!)
 
@@ -95,7 +95,7 @@ afterwards).
 
 Without a command, the container entrypoint will enter an endless loop,
 repeatedly executing `carddav2fb run` in given intervals. This allows
-automatic, regular updates of your FritzBox's phonebook.
+automatic, regular updates of your FRITZ!Box's phonebook.
 
 
 ## License
