@@ -83,7 +83,8 @@ class Converter
         // check if phone number is a SIP or internal number to avoid unwanted conversions
         if (filter_var($number, FILTER_VALIDATE_EMAIL) || substr($number, 0, 2) == '**') {
             return $number;
-        } elseif (count($this->config['phoneReplaceCharacters'])) {
+        }
+        if (count($this->config['phoneReplaceCharacters'])) {
             $number = str_replace("\xc2\xa0", "\x20", $number);
             $number = strtr($number, $this->config['phoneReplaceCharacters']);
             $number = trim(preg_replace('/\s+/', ' ', $number));

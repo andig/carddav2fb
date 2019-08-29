@@ -56,7 +56,7 @@ edit `config.example.php` and save as `config.php`
 
 <img align="right" src="assets/fritzfon.png"/>
 
-### Upload FRITZ!FON background image
+### Upload FRITZ!Fon background image
 
 Using the `background-image` command it is possible to upload the quickdial numbers as background image to FRITZ!Fon (nothing else!)
 
