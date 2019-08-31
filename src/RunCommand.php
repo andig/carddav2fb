@@ -37,6 +37,24 @@ class RunCommand extends Command
         $xcards = [];
         $substitutes = ($input->getOption('image')) ? ['PHOTO'] : [];
 
+        foreach ($this->config['local'] as $file) {
+            if (isset($file)) {
+                error_log("Reading vCard(s) from file ".$file);
+                $local = localProvider($file);
+
+                $progress = new ProgressBar($output);
+                $progress->start();
+                $xcards = download($local, [], function () use ($progress) {
+                    $progress->advance();
+                });
+                $progress->finish();
+
+                $vcards = array_merge($vcards, $xcards);
+                $quantity += count($xcards);
+                error_log(sprintf("\nRead %d vCard(s)", $quantity));
+            }
+        }
+
         foreach ($this->config['server'] as $server) {
             error_log("Downloading vCard(s) from account ".$server['user']);
             $backend = backendProvider($server);
@@ -55,23 +73,23 @@ class RunCommand extends Command
 
         // dissolve
         error_log("Dissolving groups (e.g. iCloud)");
-        $cards = dissolveGroups($vcards);
-        $remain = count($cards);
+        $vcards = dissolveGroups($vcards);
+        $remain = count($vcards);
         error_log(sprintf("Dissolved %d group(s)", $quantity - $remain));
 
         // filter
         error_log(sprintf("Filtering %d vCard(s)", $remain));
         $filters = $this->config['filters'];
-        $filtered = filter($cards, $filters);
-        error_log(sprintf("Filtered out %d vCard(s)", $remain - count($filtered)));
+        $vcards = filter($vcards, $filters);
+        error_log(sprintf("Filtered out %d vCard(s)", $remain - count($vcards)));
 
         // image upload
         if ($input->getOption('image')) {
             error_log("Detaching and uploading image(s)");
 
             $progress = new ProgressBar($output);
-            $progress->start(count($filtered));
-            $pictures = uploadImages($filtered, $this->config['fritzbox'], $this->config['phonebook'], function () use ($progress) {
+            $progress->start(count($vcards));
+            $pictures = uploadImages($vcards, $this->config['fritzbox'], $this->config['phonebook'], function () use ($progress) {
                 $progress->advance();
             });
             $progress->finish();
@@ -84,10 +102,10 @@ class RunCommand extends Command
         }
 
         // fritzbox format
-        $xmlPhonebook = exportPhonebook($filtered, $this->config);
-        error_log(sprintf(PHP_EOL."Converted %d vCard(s)", count($filtered)));
+        $xmlPhonebook = exportPhonebook($vcards, $this->config);
+        error_log(sprintf(PHP_EOL."Converted %d vCard(s)", count($vcards)));
 
-        if (!count($filtered)) {
+        if (!count($vcards)) {
             error_log("Phonebook empty - skipping upload");
             return null;
         }

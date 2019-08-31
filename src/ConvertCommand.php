@@ -8,19 +8,19 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Helper\ProgressBar;
 
 class ConvertCommand extends Command
 {
     use ConfigTrait;
 
-    const JSON_OPTIONS = \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE;
-
     protected function configure()
     {
         $this->setName('convert')
-            ->setDescription('Convert Vcard to FritzBox format')
-            ->addOption('raw', 'r', InputOption::VALUE_REQUIRED, 'export raw conversion result to json file')
-            ->addArgument('filename', InputArgument::REQUIRED, 'filename');
+            ->setDescription('Convert vCard file to FritzBox format (XML)')
+            ->addOption('image', 'i', InputOption::VALUE_NONE, 'download images')
+            ->addArgument('source', InputArgument::REQUIRED, 'source (VCF)')
+            ->addArgument('destination', InputArgument::REQUIRED, 'destination (XML)');
 
         $this->addConfig();
     }
@@ -29,26 +29,99 @@ class ConvertCommand extends Command
     {
         $this->loadConfig($input);
 
-        $filename = $input->getArgument('filename');
-        $cards = json_decode(file_get_contents($filename));
+        $filename = $input->getArgument('source');
 
-        if (!is_array($cards)) {
-            throw new \Exception(sprintf('Could not read parsed vCards from %s', $filename));
+        // we want to check for image upload show stoppers as early as possible
+        if ($input->getOption('image')) {
+            $this->uploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
         }
 
-        // filter
-        $filters = $this->config['filters'];
-        $filtered = filter($cards, $filters);
+        error_log("Reading vCard(s) from file " . $filename);
+        $local = localProvider($filename);
 
-        if ($json = $input->getOption('raw')) {
-            file_put_contents($json, json_encode($filtered, self::JSON_OPTIONS));
+        $progress = new ProgressBar($output);
+        $progress->start();
+        $vcards = download($local, [], function () use ($progress) {
+            $progress->advance();
+        });
+        $progress->finish();
+
+        $quantity = count($vcards);
+        error_log(sprintf("\nRead %d vCard(s)", $quantity));
+
+        // image upload
+        if ($input->getOption('image')) {
+            error_log("Detaching and uploading image(s)");
+
+            $progress = new ProgressBar($output);
+            $progress->start(count($vcards));
+            $pictures = uploadImages($vcards, $this->config['fritzbox'], $this->config['phonebook'], function () use ($progress) {
+                $progress->advance();
+            });
+            $progress->finish();
+
+            if ($pictures) {
+                error_log(sprintf(PHP_EOL . "Uploaded/refreshed %d of %d image file(s)", $pictures[0], $pictures[1]));
+            }
+        } else {
+            unset($this->config['phonebook']['imagepath']);             // otherwise convert will set wrong links
         }
 
-        error_log(sprintf("Converted %d cards", count($filtered)));
+        // fritzbox format
+        $xmlPhonebook = exportPhonebook($vcards, $this->config);
+        error_log(sprintf(PHP_EOL."Converted %d vCard(s)", count($vcards)));
 
-        // convert
-        $xml = exportPhonebook($filtered, $this->config);
+        if (!count($vcards)) {
+            error_log("Phonebook empty - skipping write to file");
+            return null;
+        }
 
-        echo $xml->asXML();
+        $filename = $input->getArgument('destination');
+        if ($xmlPhonebook->asXML($filename)) {
+            error_log(sprintf("Succesfull saved phonebook as %s", $filename));
+        }
+    }
+    /**
+     * checks if preconditions for upload images are OK
+     *
+     * @return            mixed     (true if all preconditions OK, error string otherwise)
+     */
+    private function uploadImagePreconditions($configFritz, $configPhonebook)
+    {
+        if (!function_exists("ftp_connect")) {
+            throw new \Exception(
+                <<<EOD
+FTP functions not available in your PHP installation.
+Image upload not possible (remove -i switch).
+Ensure PHP was installed with --enable-ftp
+Ensure php.ini does not list ftp_* functions in 'disable_functions'
+In shell run: php -r \"phpinfo();\" | grep -i FTP"
+EOD
+            );
+        }
+        if (!$configFritz['fonpix']) {
+            throw new \Exception(
+                <<<EOD
+config.php missing fritzbox/fonpix setting.
+Image upload not possible (remove -i switch).
+EOD
+            );
+        }
+        if (!$configPhonebook['imagepath']) {
+            throw new \Exception(
+                <<<EOD
+config.php missing phonebook/imagepath setting.
+Image upload not possible (remove -i switch).
+EOD
+            );
+        }
+        if ($configFritz['user'] == 'dslf-conf') {
+            throw new \Exception(
+                <<<EOD
+TR-064 default user dslf-conf has no permission for ftp access.
+Image upload not possible (remove -i switch).
+EOD
+            );
+        }
     }
 }

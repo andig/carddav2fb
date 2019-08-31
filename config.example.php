@@ -8,7 +8,15 @@ $config = [
         'imagepath' => 'file:///var/InternerSpeicher/[YOURUSBSTICK]/FRITZ/fonpix/', // mandatory if you use the -i option
     ],
 
-    // or server
+    // file (optional: is considered with the run and download command)
+    'local'  => [
+        // 'C:/Users/[user]/Downloads/my_local_contact_file.vcf',  // uncomment if you want to use it
+/* add as many as you need
+        'C:/..'
+*/
+    ],
+
+    // or server (is considered with the run and download command)
     'server' => [
         [
             'url' => 'https://...',
