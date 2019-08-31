@@ -81,6 +81,7 @@ class ConvertCommand extends Command
             error_log(sprintf("Succesfull saved phonebook as %s", $filename));
         }
     }
+
     /**
      * checks if preconditions for upload images are OK
      *

@@ -122,7 +122,6 @@ class RunCommand extends Command
         }
     }
 
-
     /**
      * checks if preconditions for upload images are OK
      *

@@ -38,6 +38,7 @@ class DownloadCommand extends Command
         }
 
         $quantity = 0;
+        $remain = 0;
         $vcards = [];
         $xcards = [];
         $substitutes = ($input->getOption('image')) ? ['PHOTO'] : [];
@@ -99,7 +100,6 @@ class DownloadCommand extends Command
         if (file_put_contents($filename, $vCardFile) != false) {
             error_log(sprintf("Succesfull saved vCard(s) in %s", $filename));
         }
-
     }
 
     /**

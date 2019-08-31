@@ -313,7 +313,7 @@ function countFilters(array $filters): int
 /**
  * Check a list of filters against the vcard properties CATEGORIES and/or GROUPS
  *
- * @param $vcard
+ * @param mixed $vcard
  * @param array $filters
  * @return bool
  */
@@ -334,11 +334,11 @@ function filtersMatch($vcard, array $filters): bool
 /**
  * Export cards to fritzbox xml
  *
- * @param Document[] $cards
+ * @param mixed $cards
  * @param array $conversions
  * @return SimpleXMLElement     the XML phone book in Fritz Box format
  */
-function exportPhonebook(array $cards, array $conversions): SimpleXMLElement
+function exportPhonebook($cards, array $conversions): SimpleXMLElement
 {
     $xmlPhonebook = new SimpleXMLElement(
         <<<EOT
