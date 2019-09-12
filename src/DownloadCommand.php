@@ -107,7 +107,7 @@ class DownloadCommand extends Command
      *
      * @return            mixed     (true if all preconditions OK, error string otherwise)
      */
-    private function uploadImagePreconditions($configFritz, $configPhonebook)
+    private function checkUploadImagePreconditions($configFritz, $configPhonebook)
     {
         if (!function_exists("ftp_connect")) {
             throw new \Exception(

@@ -7,7 +7,7 @@ use Andig\CardDav\VcardFile;
 use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
 use Andig\FritzBox\BackgroundImage;
-use Sabre\VObject;
+use Sabre\VObject\Document;
 use \SimpleXMLElement;
 
 define("MAX_IMAGE_COUNT", 150); // see: https://avm.de/service/fritzbox/fritzbox-7490/wissensdatenbank/publication/show/300_Hintergrund-und-Anruferbilder-in-FRITZ-Fon-einrichten/
@@ -41,7 +41,7 @@ function localProvider($fullpath)
  *
  * @param Backend $backend
  * @param callable $callback
- * @return mixed[]
+ * @return Document[]
  */
 function download(Backend $backend, $substitutes, callable $callback=null): array
 {
@@ -90,7 +90,7 @@ function getFtpConnection($url, $user, $password, $directory, $secure)
 /**
  * upload image files via ftp to the fritzbox fonpix directory
  *
- * @param mixed[] $vcards downloaded vCards
+ * @param Document[] $vcards downloaded vCards
  * @param array $config
  * @param array $phonebook
  * @param callable $callback
@@ -208,8 +208,8 @@ EOD
 /**
  * Dissolve the groups of iCloud contacts
  *
- * @param mixed[] $vcards
- * @return mixed[]
+ * @param Document[] $vcards
+ * @return Document[]
  */
 function dissolveGroups(array $vcards): array
 {
@@ -250,9 +250,9 @@ function dissolveGroups(array $vcards): array
 /**
  * Filter included/excluded vcards
  *
- * @param mixed[] $vcards
+ * @param Document[] $vcards
  * @param array $filters
- * @return mixed[]
+ * @return Document[]
  */
 function filter(array $vcards, array $filters): array
 {
@@ -313,11 +313,11 @@ function countFilters(array $filters): int
 /**
  * Check a list of filters against the vcard properties CATEGORIES and/or GROUPS
  *
- * @param mixed $vcard
+ * @param Document $vcard
  * @param array $filters
  * @return bool
  */
-function filtersMatch($vcard, array $filters): bool
+function filtersMatch(Document $vcard, array $filters): bool
 {
     foreach ($filters as $attribute => $values) {
         $param = strtoupper($attribute);
@@ -334,11 +334,11 @@ function filtersMatch($vcard, array $filters): bool
 /**
  * Export cards to fritzbox xml
  *
- * @param mixed $cards
+ * @param Document[] $cards
  * @param array $conversions
  * @return SimpleXMLElement     the XML phone book in Fritz Box format
  */
-function exportPhonebook($cards, array $conversions): SimpleXMLElement
+function exportPhonebook(array $cards, array $conversions): SimpleXMLElement
 {
     $xmlPhonebook = new SimpleXMLElement(
         <<<EOT
