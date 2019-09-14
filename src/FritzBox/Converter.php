@@ -3,6 +3,7 @@
 namespace Andig\FritzBox;
 
 use Andig;
+use \Sabre\VObject;
 use \Sabre\VObject\Document;
 use \SimpleXMLElement;
 

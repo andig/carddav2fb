@@ -29,7 +29,7 @@ class RunCommand extends Command
 
         // we want to check for image upload show stoppers as early as possible
         if ($input->getOption('image')) {
-            $this->uploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
+            $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
         }
 
         $quantity = 0;

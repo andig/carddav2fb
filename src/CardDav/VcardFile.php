@@ -3,6 +3,7 @@
 namespace Andig\CardDav;
 
 use Andig\CardDav\Backend;
+use Sabre\VObject\Document;
 use Sabre\VObject;
 
 /**
@@ -18,6 +19,12 @@ class VcardFile extends Backend
      */
     private $fullpath;
 
+    /**
+     * single vCard
+     * @var Document
+     */
+    private $vCard;
+
     public function __construct(string $fullpath = null)
     {
         parent::__construct();
@@ -29,7 +36,7 @@ class VcardFile extends Backend
     /**
      * Gets all vCards including additional information from the local file
      *
-     * @return array   All parsed vCards from file
+     * @return Document[] All parsed vCards from file
      */
     public function getVcards(): array
     {
@@ -38,10 +45,10 @@ class VcardFile extends Backend
         }
 
         $cards = [];
-        $vcards = new VObject\Splitter\VCard(fopen($this->fullpath, 'r'));
-        while ($vcard = $vcards->getNext()) {
-            $vcard = $this->enrichVcard($vcard);
-            $cards[] = $vcard;
+        $vCards = new VObject\Splitter\VCard(fopen($this->fullpath, 'r'));
+        while ($this->vCard = $vCards->getNext()) {
+            $this->vCard = $this->enrichVcard($this->vCard);
+            $cards[] = $this->vCard;
 
             $this->progress();
         }

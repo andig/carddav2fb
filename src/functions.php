@@ -7,6 +7,7 @@ use Andig\CardDav\VcardFile;
 use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
 use Andig\FritzBox\BackgroundImage;
+use Sabre\VObject;
 use Sabre\VObject\Document;
 use \SimpleXMLElement;
 
