@@ -7,7 +7,6 @@ use Andig\CardDav\VcardFile;
 use Andig\FritzBox\Converter;
 use Andig\FritzBox\Api;
 use Andig\FritzBox\BackgroundImage;
-use Sabre\VObject;
 use Sabre\VObject\Document;
 use \SimpleXMLElement;
 
@@ -209,8 +208,8 @@ EOD
 /**
  * Dissolve the groups of iCloud contacts
  *
- * @param Document[] $vcards
- * @return Document[]
+ * @param mixed[] $vcards
+ * @return mixed[]
  */
 function dissolveGroups(array $vcards): array
 {
@@ -251,9 +250,9 @@ function dissolveGroups(array $vcards): array
 /**
  * Filter included/excluded vcards
  *
- * @param Document[] $vcards
+ * @param mixed[] $vcards
  * @param array $filters
- * @return Document[]
+ * @return mixed[]
  */
 function filter(array $vcards, array $filters): array
 {

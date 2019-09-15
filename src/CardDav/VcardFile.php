@@ -3,8 +3,9 @@
 namespace Andig\CardDav;
 
 use Andig\CardDav\Backend;
-use Sabre\VObject\Document;
 use Sabre\VObject;
+use Sabre\VObject\Document;
+use Sabre\VObject\Component;
 
 /**
  * @author Volker Püschel <knuffy@anasco.de>
@@ -18,12 +19,6 @@ class VcardFile extends Backend
      * @var string
      */
     private $fullpath;
-
-    /**
-     * single vCard
-     * @var Document
-     */
-    private $vCard;
 
     public function __construct(string $fullpath = null)
     {
@@ -46,9 +41,9 @@ class VcardFile extends Backend
 
         $cards = [];
         $vCards = new VObject\Splitter\VCard(fopen($this->fullpath, 'r'));
-        while ($this->vCard = $vCards->getNext()) {
-            $this->vCard = $this->enrichVcard($this->vCard);
-            $cards[] = $this->vCard;
+        while ($vCard = $vCards->getNext()) {
+            $vCard = $this->enrichVcard($vCard);
+            $cards[] = $vCard;
 
             $this->progress();
         }

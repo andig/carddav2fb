@@ -3,17 +3,12 @@
 namespace Andig\FritzBox;
 
 use Andig;
-use \Sabre\VObject;
-use \Sabre\VObject\Document;
 use \SimpleXMLElement;
 
 class Converter
 {
     private $config;
     private $configImagePath;
-
-    /** @var Document */
-    private $card;
 
     /** @var SimpleXMLElement */
     private $contact;
@@ -32,10 +27,10 @@ class Converter
      * Convert Vcard to FritzBox XML
      * All conversion steps operate on $this->contact
      *
-     * @param Document $card
+     * @param mixed $card
      * @return SimpleXMLElement[]
      */
-    public function convert(Document $card): array
+    public function convert($card): array
     {
         $allNumbers  = $this->getPhoneNumbers($card);       // get array of prequalified phone numbers
         $adresses = $this->getEmailAdresses($card);         // get array of prequalified email adresses
@@ -93,10 +88,10 @@ class Converter
     /**
      * add VIP node
      *
-     * @param Document $card
+     * @param mixed $card
      * @return void
      */
-    private function addVip(Document $card)
+    private function addVip($card)
     {
         $vipCategories = $this->config['vip'] ?? [];
 
@@ -151,10 +146,10 @@ class Converter
      * Return an array of prequalified phone numbers. This is neccesseary to
      * handle the maximum of nine phone numbers per FRITZ!Box phonebook contacts
      *
-     * @param Document $card
+     * @param mixed $card
      * @return array
      */
-    private function getPhoneNumbers(Document $card): array
+    private function getPhoneNumbers($card): array
     {
         if (!isset($card->TEL)) {
             return [];
@@ -234,10 +229,10 @@ class Converter
      * Return an array of prequalified email adresses. There is no limitation
      * for the amount of email adresses in FRITZ!Box phonebook contacts.
      *
-     * @param Document $card
+     * @param mixed $card
      * @return array
      */
-    private function getEmailAdresses(Document $card): array
+    private function getEmailAdresses($card): array
     {
         if (!isset($card->EMAIL)) {
             return [];
@@ -269,11 +264,11 @@ class Converter
     /**
      * Return class property with applied conversion rules
      *
-     * @param Document $card
+     * @param mixed $card
      * @param string $property
      * @return string
      */
-    private function getProperty(Document $card, string $property): string
+    private function getProperty($card, string $property): string
     {
         if (null === ($rules = @$this->config[$property])) {
             throw new \Exception("Missing conversion definition in config for [$property]");
