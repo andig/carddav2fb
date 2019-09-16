@@ -36,7 +36,7 @@ class VcardFile extends Backend
             return [];
         }
 
-        if (!file_exists($this->fullpath) ) {
+        if (!file_exists($this->fullpath)) {
             error_log(sprintf('File %s not found!', $this->fullpath));
             return [];
         }
