@@ -3,9 +3,8 @@
 namespace Andig\CardDav;
 
 use Andig\CardDav\Backend;
-use Sabre\VObject;
 use Sabre\VObject\Document;
-use Sabre\VObject\Component;
+use Sabre\VObject\Splitter\VCard;
 
 /**
  * @author Volker Püschel <knuffy@anasco.de>
@@ -23,9 +22,7 @@ class VcardFile extends Backend
     public function __construct(string $fullpath = null)
     {
         parent::__construct();
-        if ($fullpath) {
-            $this->fullpath = $fullpath;
-        }
+        $this->fullpath = $fullpath;
     }
 
     /**
@@ -39,11 +36,23 @@ class VcardFile extends Backend
             return [];
         }
 
+        if (!file_exists($this->fullpath) ) {
+            error_log(sprintf('File %s not found!', $this->fullpath));
+            return [];
+        }
+        $vcf = fopen($this->fullpath, 'r');
+        if (!$vcf) {
+            error_log(sprintf('File %s open failed!', $this->fullpath));
+            return [];
+        }
         $cards = [];
-        $vCards = new VObject\Splitter\VCard(fopen($this->fullpath, 'r'));
+        $vCards = new VCard($vcf);
         while ($vCard = $vCards->getNext()) {
-            $vCard = $this->enrichVcard($vCard);
-            $cards[] = $vCard;
+            if ($vCard instanceof Document) {
+                $cards[] = $this->enrichVcard($vCard);
+            } else {
+                error_log('Unexpected type: ' . get_class($vCard));
+            }
 
             $this->progress();
         }
