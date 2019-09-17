@@ -30,8 +30,6 @@ class DownloadCommand extends Command
     {
         $this->loadConfig($input);
 
-        $filename = $input->getArgument('filename');
-
         // we want to check for image upload show stoppers as early as possible
         if ($input->getOption('image')) {
             $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
@@ -40,41 +38,32 @@ class DownloadCommand extends Command
         $quantity = 0;
         $remain = 0;
         $vcards = [];
-        $xcards = [];
-        $substitutes = ($input->getOption('image')) ? ['PHOTO'] : [];
-        $vCardFile = '';
 
-        foreach ($this->config['local'] as $file) {
-            if (isset($file)) {
-                error_log("Reading vCard(s) from file ".$file);
-                $local = localProvider($file);
-
-                $progress = new ProgressBar($output);
-                $progress->start();
-                $xcards = download($local, [], function () use ($progress) {
-                    $progress->advance();
-                });
-                $progress->finish();
-
-                $vcards = array_merge($vcards, $xcards);
-                $quantity += count($xcards);
-                error_log(sprintf("\nRead %d vCard(s)", $quantity));
-            }
-        }
-
-        foreach ($this->config['server'] as $server) {
-            error_log("Downloading vCard(s) from account ".$server['user']);
-            $backend = backendProvider($server);
-
+        $downloadProgress = function($provider) use ($output, &$vcards) {
             $progress = new ProgressBar($output);
             $progress->start();
-            $xcards = download($backend, $substitutes, function () use ($progress) {
+            $cards = download($provider, function () use ($progress) {
                 $progress->advance();
             });
             $progress->finish();
 
-            $vcards = array_merge($vcards, $xcards);
-            $quantity += count($xcards);
+            $vcards = array_merge($vcards, $cards);
+            return count($cards);
+        };
+
+        foreach ($this->config['local'] as $file) {
+            error_log("Reading vCard(s) from file ".$file);
+            $provider = localProvider($file);
+            $quantity += $downloadProgress($provider);
+            error_log(sprintf("\nRead %d vCard(s)", $quantity));
+        }
+
+        $substitutes = ($input->getOption('image')) ? ['PHOTO'] : [];
+        foreach ($this->config['server'] as $server) {
+            error_log("Downloading vCard(s) from account ".$server['user']);
+            $provider = backendProvider($server);
+            $provider->setSubstitutes($substitutes);
+            $quantity += $downloadProgress($provider);
             error_log(sprintf("\nDownloaded %d vCard(s)", $quantity));
             $remain = $quantity;
         }
@@ -94,11 +83,15 @@ class DownloadCommand extends Command
             error_log(sprintf("Filtered out %d vCard(s)", $remain - count($vcards)));
         }
 
+        // save to file
+        $vCardContents = '';
         foreach ($vcards as $vcard) {
-            $vCardFile .= $vcard->serialize();
+            $vCardContents .= $vcard->serialize();
         }
-        if (file_put_contents($filename, $vCardFile) != false) {
-            error_log(sprintf("Succesfull saved vCard(s) in %s", $filename));
+
+        $filename = $input->getArgument('filename');
+        if (file_put_contents($filename, $vCardContents) != false) {
+            error_log(sprintf("Succesfully saved vCard(s) in %s", $filename));
         }
     }
 

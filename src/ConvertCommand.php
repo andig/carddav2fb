@@ -37,11 +37,11 @@ class ConvertCommand extends Command
         }
 
         error_log("Reading vCard(s) from file " . $filename);
-        $local = localProvider($filename);
+        $provider = localProvider($filename);
 
         $progress = new ProgressBar($output);
         $progress->start();
-        $vcards = download($local, [], function () use ($progress) {
+        $vcards = download($provider, function () use ($progress) {
             $progress->advance();
         });
         $progress->finish();

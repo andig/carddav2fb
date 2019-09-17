@@ -43,10 +43,9 @@ function localProvider($fullpath)
  * @param callable $callback
  * @return Document[]
  */
-function download(Backend $backend, $substitutes, callable $callback=null): array
+function download(Backend $backend, callable $callback=null): array
 {
     $backend->setProgress($callback);
-    $backend->setSubstitutes($substitutes);
     return $backend->getVcards();
 }
 
