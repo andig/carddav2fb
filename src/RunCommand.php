@@ -42,6 +42,8 @@ class RunCommand extends Command
         } else {                        // no attributes are set in the FRITZ!Box or lost -> try to download them
             $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
         }
+
+        // download from server or lokal files
         $vcards = $this->downloadAllProviders($output, $input->getOption('image'));
         error_log(sprintf("Downloaded %d vCard(s) in total", count($vcards)));
 
