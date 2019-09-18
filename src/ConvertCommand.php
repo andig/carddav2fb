@@ -13,6 +13,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 class ConvertCommand extends Command
 {
     use ConfigTrait;
+    use DownloadTrait;
 
     protected function configure()
     {
@@ -36,25 +37,10 @@ class ConvertCommand extends Command
             $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
         }
 
-        $quantity = 0;
-        $vcards = [];
-
-        $downloadProgress = function($provider) use ($output, &$vcards) {
-            $progress = new ProgressBar($output);
-            $progress->start();
-            $cards = download($provider, function () use ($progress) {
-                $progress->advance();
-            });
-            $progress->finish();
-
-            $vcards = array_merge($vcards, $cards);
-            return count($cards);
-        };
-
         error_log("Reading vCard(s) from file " . $filename);
         $provider = localProvider($filename);
-        $quantity += $downloadProgress($provider);
-        error_log(sprintf("\nRead %d vCard(s)", $quantity));
+        $vcards = $this->downloadProvider($output, $provider);
+        error_log(sprintf("\nRead %d vCard(s)", count($vcards)));
 
         // image upload
         if ($input->getOption('image')) {

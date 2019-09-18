@@ -13,6 +13,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 class DownloadCommand extends Command
 {
     use ConfigTrait;
+    use DownloadTrait;
 
     protected function configure()
     {
@@ -35,52 +36,22 @@ class DownloadCommand extends Command
             $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
         }
 
-        $quantity = 0;
-        $remain = 0;
-        $vcards = [];
-
-        $downloadProgress = function($provider) use ($output, &$vcards) {
-            $progress = new ProgressBar($output);
-            $progress->start();
-            $cards = download($provider, function () use ($progress) {
-                $progress->advance();
-            });
-            $progress->finish();
-
-            $vcards = array_merge($vcards, $cards);
-            return count($cards);
-        };
-
-        foreach ($this->config['local'] as $file) {
-            error_log("Reading vCard(s) from file ".$file);
-            $provider = localProvider($file);
-            $quantity += $downloadProgress($provider);
-            error_log(sprintf("\nRead %d vCard(s)", $quantity));
-        }
-
-        $substitutes = ($input->getOption('image')) ? ['PHOTO'] : [];
-        foreach ($this->config['server'] as $server) {
-            error_log("Downloading vCard(s) from account ".$server['user']);
-            $provider = backendProvider($server);
-            $provider->setSubstitutes($substitutes);
-            $quantity += $downloadProgress($provider);
-            error_log(sprintf("\nDownloaded %d vCard(s)", $quantity));
-            $remain = $quantity;
-        }
+        $vcards = $this->downloadFromConfig($input, $output);
 
         // dissolve
         if ($input->getOption('dissolve')) {
+            $quantity = count($vcards);
             error_log("Dissolving groups (e.g. iCloud)");
             $vcards = dissolveGroups($vcards);
-            $remain = count($vcards);
-            error_log(sprintf("Dissolved %d group(s)", $quantity - $remain));
+            error_log(sprintf("Dissolved %d group(s)", $quantity - count($vcards)));
         }
 
         // filter
         if ($input->getOption('filter')) {
-            error_log(sprintf("Filtering %d vCard(s)", $remain));
+            $quantity = count($vcards);
+            error_log(sprintf("Filtering %d vCard(s)", $quantity));
             $vcards = filter($vcards, $this->config['filters']);
-            error_log(sprintf("Filtered out %d vCard(s)", $remain - count($vcards)));
+            error_log(sprintf("Filtered out %d vCard(s)", $quantity - count($vcards)));
         }
 
         // save to file
