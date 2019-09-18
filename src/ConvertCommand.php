@@ -36,17 +36,24 @@ class ConvertCommand extends Command
             $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
         }
 
+        $quantity = 0;
+        $vcards = [];
+
+        $downloadProgress = function($provider) use ($output, &$vcards) {
+            $progress = new ProgressBar($output);
+            $progress->start();
+            $cards = download($provider, function () use ($progress) {
+                $progress->advance();
+            });
+            $progress->finish();
+
+            $vcards = array_merge($vcards, $cards);
+            return count($cards);
+        };
+
         error_log("Reading vCard(s) from file " . $filename);
         $provider = localProvider($filename);
-
-        $progress = new ProgressBar($output);
-        $progress->start();
-        $vcards = download($provider, function () use ($progress) {
-            $progress->advance();
-        });
-        $progress->finish();
-
-        $quantity = count($vcards);
+        $quantity += $downloadProgress($provider);
         error_log(sprintf("\nRead %d vCard(s)", $quantity));
 
         // image upload
