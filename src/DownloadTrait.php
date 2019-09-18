@@ -17,7 +17,7 @@ trait DownloadTrait
      * @param Backend $provider
      * @return Document[]
      */
-    function downloadProvider(OutputInterface $output, Backend $provider): array {
+    public function downloadProvider(OutputInterface $output, Backend $provider): array {
         $progress = new ProgressBar($output);
         $progress->start();
         $cards = download($provider, function () use ($progress) {
@@ -34,7 +34,7 @@ trait DownloadTrait
      * @param OutputInterface $output
      * @return Document[]
      */
-    function downloadAllProviders(InputInterface $input, OutputInterface $output): array {
+    public function downloadAllProviders(InputInterface $input, OutputInterface $output): array {
         $vcards = [];
 
         foreach ($this->config['local'] as $file) {
