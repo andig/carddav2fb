@@ -33,7 +33,7 @@ class RunCommand extends Command
             $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
         }
 
-        $vcards = $this->downloadAllProviders($input, $output);
+        $vcards = $this->downloadAllProviders($output, $input->getOption('image'));
 
         // dissolve
         $quantity = count($vcards);
