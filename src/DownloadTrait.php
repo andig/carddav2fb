@@ -58,5 +58,7 @@ trait DownloadTrait
             error_log(sprintf("\nDownloaded %d vCard(s)", count($cards)));
             $vcards = array_merge($vcards, $cards);
         }
+
+        return $vcards;
     }
 }
