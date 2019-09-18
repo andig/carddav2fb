@@ -34,6 +34,7 @@ class RunCommand extends Command
         }
 
         $vcards = $this->downloadAllProviders($output, $input->getOption('image'));
+        error_log(sprintf("Downloaded %d vCard(s) in total", count($vcards)));
 
         // dissolve
         $quantity = count($vcards);

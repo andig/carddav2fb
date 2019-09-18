@@ -37,6 +37,7 @@ class DownloadCommand extends Command
         }
 
         $vcards = $this->downloadAllProviders($output, $input->getOption('image'));
+        error_log(sprintf("Downloaded %d vCard(s) in total", count($vcards)));
 
         // dissolve
         if ($input->getOption('dissolve')) {

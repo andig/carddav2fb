@@ -26,7 +26,7 @@ trait DownloadTrait
      * @param Backend $provider
      * @return Document[]
      */
-    function downloadProvider(OutputInterface $output, Backend $provider): array
+    public function downloadProvider(OutputInterface $output, Backend $provider): array
     {
         $progress = new ProgressBar($output);
         $progress->start();
@@ -44,7 +44,7 @@ trait DownloadTrait
      * @param bool $downloadImages
      * @return Document[]
      */
-    function downloadAllProviders(OutputInterface $output, bool $downloadImages): array
+    public function downloadAllProviders(OutputInterface $output, bool $downloadImages): array
     {
         $vcards = [];
 
