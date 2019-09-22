@@ -81,7 +81,7 @@ class Restorer
             // get the contacts header data (name and UID)
             $contact = $number->xpath("./ancestor::contact");
             $attributes['name'] = (string)$contact[0]->person->realName;
-            $uid = empty((string)$contact[0]->carddav_uid) ? uniqid() : (string)$contact[0]->carddav_uid;
+            $uid = (string)$contact[0]->carddav_uid ?: uniqid();
             $phonebookData[$uid] = $attributes;
         }
 
