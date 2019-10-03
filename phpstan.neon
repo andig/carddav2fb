@@ -4,3 +4,4 @@ parameters:
 		- Sabre\VObject\Document
 	ignoreErrors:
 		- '#Property Sabre.VObject.Document::.FULLNAME .Sabre.VObject.Property. does not accept string#'
+		- '#Property Sabre.VObject.Document::.IMAGEURL .Sabre.VObject.Property. does not accept string#'

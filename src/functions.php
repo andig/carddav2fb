@@ -88,6 +88,103 @@ function getFtpConnection($url, $user, $password, $directory, $secure)
 }
 
 /**
+ * get fractions from >VERSION:4.0< mime properties which Sabre/Vobject does not deliver
+ * see: https://github.com/sabre-io/vobject/issues/458
+ *
+ * @param string $mimeData
+ * @return array parsed fractions
+ */
+function getMimeFractions($mimeData)
+{
+    @list(
+        $param,
+        $content,
+    ) = explode(',', $mimeData);
+    @list(
+        $prefix,
+        $data,
+    ) = explode(':', $param);
+    @list(
+        $mimetype,
+        $encoding,
+    ) = explode(';', $data);
+    @list(
+        $qualifier,
+        $type,
+    ) = explode('/', $mimetype);
+    return [
+        'type'     => $type,
+        'encoding' => $encoding,
+        'content'  => $content,
+    ];
+}
+
+/**
+ * convert safely a PNG to JPG with the transparency in white
+ * see: https://stackoverflow.com/a/8951540/10871304
+ *
+ * @param string $imagePNG binary PNG data
+ * @return string $imageJPG binary JPG data
+ */
+function convertPNGtoJPG($imagePNG)
+{
+    $source = imagecreatefromstring($imagePNG);
+    $target = imagecreatetruecolor(imagesx($source), imagesy($source));
+    imagefill($target, 0, 0, imagecolorallocate($target, 255, 255, 255));
+    imagealphablending($target, true);
+    imagecopy($target, $source, 0, 0, 0, 0, imagesx($source), imagesy($source));
+    imagedestroy($source);
+    ob_start();
+    imagejpeg($target);
+    $imageJPG = ob_get_clean();
+    imagedestroy($target);
+
+    return $imageJPG;
+}
+
+/**
+ * get image data from vCard
+ *
+ * @param document $vcard
+ * @return string|bool $vcardImage binary image data or false, if no jpeg could delivered
+ */
+function getJPEGimage($vcard)
+{
+    if ((string)$vcard->VERSION == '3.0') {
+        $mimeType = $vcard->PHOTO['TYPE'];
+        $imageData = (string)$vcard->PHOTO;
+    } elseif ((string)$vcard->VERSION == '4.0') {
+        $fraction = getMimeFractions((string)$vcard->PHOTO);
+        $mimeType = strtoupper($fraction['type']);
+        if ($fraction['encoding'] == 'base64') {
+            $imageData = base64_decode($fraction['content']);
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+    switch ($mimeType) {
+        case 'JPEG':
+            $vcardImage = $imageData;
+            break;
+
+        case 'PNG':
+            $vcardImage = convertPNGtoJPG($imageData);
+            break;
+
+        /*case: 'WEBP':                 further extensions if CardDAV servers use other image formats
+            $vcardImage = convertWEBPtoJPG($imageData);
+            break;  */
+
+        default:
+            return false;
+    }
+
+    return $vcardImage;
+}
+
+/**
  * upload image files via ftp to the fritzbox fonpix directory
  *
  * @param Document[] $vcards downloaded vCards
@@ -124,7 +221,6 @@ function uploadImages(array $vcards, array $config, array $phonebook, callable $
         $mapFTPUIDtoFTPImageName[$ftpUid] = $ftpFile;
     }
 
-    /** @var \stdClass $vcard */
     foreach ($vcards as $vcard) {
         if (is_callable($callback)) {
             ($callback)();
@@ -142,22 +238,8 @@ function uploadImages(array $vcards, array $config, array $phonebook, callable $
             continue;
         }
         // Fritz!Box only accept jpg-files
-        $version = (string)$vcard->VERSION;
-        if ($version == '3.0') {
-            if ($vcard->PHOTO['TYPE'] != 'JPEG') {
-                continue;
-            } else {
-                $vcardImage = (string)$vcard->PHOTO;
-            }
-        } elseif ($version == '4.0') {                       // see: https://github.com/sabre-io/vobject/issues/458
-            $value = explode(',', (string)$vcard->PHOTO, 2);
-            if (!preg_match("/jpeg/", $value[0])) {
-                continue;
-            } else {
-                if (!$vcardImage = base64_decode($value[1])) {      // PONR: I don´t trust this way of fetching data
-                    continue;
-                };
-            }
+        if (!$vcardImage = getJPEGimage($vcard)) {
+            continue;
         }
 
         $countAllImages++;
