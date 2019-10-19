@@ -48,7 +48,11 @@ trait DownloadTrait
     {
         $vcards = [];
 
-        foreach ($this->config['local'] as $file) {
+        $localConfig = $this->config['local'] ?? [];
+        if (!$localConfig) {
+            error_log('Notice: Local config is empty and will not be applied');
+        }
+        foreach ($localConfig as $file) {
             error_log("Reading vCard(s) from file ".$file);
 
             $provider = localProvider($file);
