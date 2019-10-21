@@ -284,7 +284,7 @@ EOD
         // Gets rid of all namespace definitions
         $xml = preg_replace('/xmlns[^=]*="[^"]*"/i', '', $xml);
         // Gets rid of all namespace references
-        $xml = preg_replace('/(<\/*)[^>:]+:/', '$1', $xml);
+        $xml = preg_replace('/(<\/*)[^!>:]+:/', '$1', $xml);
 
         return $xml;
     }
