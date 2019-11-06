@@ -67,10 +67,11 @@ class Restorer
 
         $converter = new Converter($conversions);
         $phonebookData = [];
-
         $numbers = $xmlPhonebook->xpath('//number[@quickdial or @vanity] | //number[starts-with(text(),"**")]');
-
         foreach ($numbers as $number) {
+            if (preg_match('/00@hd-telefonie.avm.de/', (string)$number)) {
+                continue;
+            }
             $attributes = $this->getPlainArray();                   // it´s easier to handle with the full set
             // regardless of how the number was previously converted, the current config is applied here
             $attributes['number'] = $converter->convertPhonenumber((string)$number);
