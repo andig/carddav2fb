@@ -113,8 +113,8 @@ function getMimeFractions($mimeData)
         $type,
     ) = explode('/', $mimetype);
     return [
-        'type'     => $type,
-        'encoding' => $encoding,
+        'type'     => strtoupper($type),
+        'encoding' => strtolower($encoding),
         'content'  => $content,
     ];
 }
@@ -151,11 +151,23 @@ function convertPNGtoJPG($imagePNG)
 function getJPEGimage($vcard)
 {
     if ((string)$vcard->VERSION == '3.0') {
-        $mimeType = $vcard->PHOTO['TYPE'];
-        $imageData = (string)$vcard->PHOTO;
+        if (strtoupper($vcard->PHOTO['VALUE']) == 'URI') {
+            $fraction = getMimeFractions((string)$vcard->PHOTO);
+            $mimeType = $fraction['type'];
+            if ($fraction['encoding'] == 'base64') {
+                $imageData = base64_decode($fraction['content']);
+            } elseif (empty($fraction['encoding'])) {       // RFC 2426: "default encoding of 8bit is used and no explicit ENCODING parameter is needed"
+                $imageData = quoted_printable_decode($fraction['content']);     // that might be wrong - but have no data to test it
+            } else {
+                return false;
+            }
+        } else {                                            // according to RFC 2426 this should be the usual case
+            $mimeType = strtoupper($vcard->PHOTO['TYPE']);
+            $imageData = (string)$vcard->PHOTO;
+        }
     } elseif ((string)$vcard->VERSION == '4.0') {
         $fraction = getMimeFractions((string)$vcard->PHOTO);
-        $mimeType = strtoupper($fraction['type']);
+        $mimeType = $fraction['type'];
         if ($fraction['encoding'] == 'base64') {
             $imageData = base64_decode($fraction['content']);
         } else {
