@@ -576,7 +576,7 @@ function getQuickdials(array $attributes, bool $alias = false)
  */
 function uploadBackgroundImage($phonebook, $attributes, array $config)
 {
-    $quickdials = getQuickdials($attributes, $config['quickdial_alias']);
+    $quickdials = getQuickdials($attributes, $config['quickdial_alias'] ?? false);
     if (!count($quickdials)) {
         error_log('No quickdial numbers are set for a background image upload');
         return;
