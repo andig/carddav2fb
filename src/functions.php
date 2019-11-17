@@ -541,7 +541,7 @@ function downloadPhonebook(array $fritzbox, array $phonebook)
  * @param array $attributes
  * @return array
  */
-function getQuickdials(array $attributes)
+function getQuickdials(array $attributes, array $config)
 {
     if (empty($attributes)) {
         return [];
@@ -555,7 +555,9 @@ function getQuickdials(array $attributes)
         } else {
             $name = $parts[1];                      // firstname
         }
-        $name = preg_replace('/Dr. /', '', $name);
+        if ($config['quickdial_alias'] == true && !empty($values['vanity'])) {
+            $name = ucfirst(strtolower($values['vanity']));     // quickdial alias
+        }
         $quickdialNames[$values['quickdial']] = substr($name, 0, 10);
     }
     ksort($quickdialNames);                         // ascending: lowest quickdial # first
@@ -573,7 +575,7 @@ function getQuickdials(array $attributes)
  */
 function uploadBackgroundImage($phonebook, $attributes, array $config)
 {
-    $quickdials = getQuickdials($attributes);
+    $quickdials = getQuickdials($attributes, $config);
     if (!count($quickdials)) {
         error_log('No quickdial numbers are set for a background image upload');
         return;

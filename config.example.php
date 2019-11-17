@@ -37,6 +37,7 @@ $config = [
         'fritzfons' => [            // uncomment to upload quickdial image as background to designated FRITZ!Fon
             // '613',               // internal number must be in the range '610' to '615' (maximum of DECT devices)
         ],
+        'quickdial_alias' => false, // if true, than vanity names ("JON") become quickdial aliases ("Jon") in the background image
         'http' => [                 // http client options are directly passed to Guzzle http client
             // 'verify' => false,   // uncomment to disable certificate check
         ],
