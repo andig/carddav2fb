@@ -539,9 +539,10 @@ function downloadPhonebook(array $fritzbox, array $phonebook)
  * Get quickdial number and names as array from given XML phone book
  *
  * @param array $attributes
- * @return array
+ * @param bool $alias
+ * @return array $quickdialNames
  */
-function getQuickdials(array $attributes, bool $alias)
+function getQuickdials(array $attributes, bool $alias = false)
 {
     if (empty($attributes)) {
         return [];
