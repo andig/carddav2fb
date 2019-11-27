@@ -76,7 +76,7 @@ class RunCommand extends Command
 
         if (!count($vcards)) {
             error_log("Phonebook empty - skipping upload");
-            return 1;
+            return 0;
         }
 
         // write back saved attributes
@@ -91,6 +91,8 @@ class RunCommand extends Command
         if (count($this->config['fritzbox']['fritzfons']) && $this->config['phonebook']['id'] == 0) {
             uploadBackgroundImage($savedAttributes, $this->config['fritzbox']);
         }
+
+        return 0;
     }
 
     /**

@@ -64,13 +64,15 @@ class ConvertCommand extends Command
 
         if (!count($vcards)) {
             error_log("Phonebook empty - skipping write to file");
-            return 1;
+            return 0;
         }
 
         $filename = $input->getArgument('destination');
         if ($xmlPhonebook->asXML($filename)) {
             error_log(sprintf("Succesfull saved phonebook as %s", $filename));
         }
+
+        return 0;
     }
 
     /**
