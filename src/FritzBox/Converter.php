@@ -14,7 +14,6 @@ class Converter
     private $contact;
 
     private $phoneSort = [];
-    private $uniqueDials = [];
 
     public function __construct(array $config)
     {
