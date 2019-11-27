@@ -78,7 +78,7 @@ class RunCommand extends Command
 
         if (!count($vcards)) {
             error_log("Phonebook empty - skipping upload");
-            return null;
+            return;
         }
 
         // write back saved attributes

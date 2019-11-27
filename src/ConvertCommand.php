@@ -66,7 +66,7 @@ class ConvertCommand extends Command
 
         if (!count($vcards)) {
             error_log("Phonebook empty - skipping write to file");
-            return null;
+            return;
         }
 
         $filename = $input->getArgument('destination');
