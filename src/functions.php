@@ -286,7 +286,7 @@ function uploadImages(array $vcards, array $config, array $phonebook, callable $
         }
         fclose($memstream);
     }
-    ftp_close($ftp_conn);
+    @ftp_close($ftp_conn);
 
     if ($countAllImages > MAX_IMAGE_COUNT) {
         error_log(sprintf(<<<EOD
@@ -616,6 +616,7 @@ function uploadAttributes($phonebook, $config)
         }
         ftp_rename($ftp_conn, 'Attributes.csv', 'Attributes.csv.bak');  // create a new backup file
     }
+
     // open a fast in-memory file stream
     $memstream = fopen('php://memory', 'r+');
     $rows = $restore->phonebookDataToCSV($specialAttributes);
@@ -625,7 +626,7 @@ function uploadAttributes($phonebook, $config)
         error_log('Error uploading Attributes.csv!' . PHP_EOL);
     }
     fclose($memstream);
-    ftp_close($ftp_conn);
+    @ftp_close($ftp_conn);
 
     return $specialAttributes;
 }
@@ -655,7 +656,7 @@ function downloadAttributes($config)
         }
     }
     fclose($csvFile);
-    ftp_close($ftp_conn);
+    @ftp_close($ftp_conn);
 
     return $specialAttributes;
 }
