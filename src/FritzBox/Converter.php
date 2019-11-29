@@ -8,7 +8,6 @@ use \SimpleXMLElement;
 class Converter
 {
     private $config;
-    private $configImagePath;
 
     /** @var SimpleXMLElement */
     private $contact;
@@ -18,7 +17,6 @@ class Converter
     public function __construct(array $config)
     {
         $this->config = $config['conversions'];
-        $this->configImagePath = @$config['phonebook']['imagepath'];
         $this->phoneSort = $this->getPhoneTypesSortOrder();
     }
 
@@ -60,9 +58,7 @@ class Converter
 
             // add photo
             if (isset($card->PHOTO) && isset($card->IMAGEURL)) {
-                if (isset($this->configImagePath)) {
-                    $person->addChild('imageURL', (string)$card->IMAGEURL);
-                }
+                $person->addChild('imageURL', (string)$card->IMAGEURL);
             }
 
             $contacts[] = $this->contact;

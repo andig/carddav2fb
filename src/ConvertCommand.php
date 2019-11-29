@@ -56,8 +56,6 @@ class ConvertCommand extends Command
             if ($pictures) {
                 error_log(sprintf(PHP_EOL . "Uploaded/refreshed %d of %d image file(s)", $pictures[0], $pictures[1]));
             }
-        } else {
-            unset($this->config['phonebook']['imagepath']);             // otherwise convert will set wrong links
         }
 
         // fritzbox format
