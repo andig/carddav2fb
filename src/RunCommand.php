@@ -93,6 +93,9 @@ class RunCommand extends Command
         if (count($this->config['fritzbox']['fritzfons']) && $this->config['phonebook']['id'] == 0) {
             uploadBackgroundImage($xmlPhonebook, $savedAttributes, $this->config['fritzbox']);
         }
+
+        // Return 0 on success
+        return 0;
     }
 
     /**
