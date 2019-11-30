@@ -88,7 +88,7 @@ $config = [
             'WORK' => 'work',
             'HOME' => 'home',
             'CELL' => 'mobile',
-            'FAX' => 'fax_work' // NOTE: actual mapping is ignored but order counts, so fac is put last
+            'FAX' => 'fax_work' // NOTE: actual mapping is ignored but order counts, so fax is put last
         ],
         'emailTypes' => [
             'WORK' => 'work',
