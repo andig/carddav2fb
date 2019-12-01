@@ -147,7 +147,11 @@ class Restorer
                 if ($phone = $contact[0]->xpath(sprintf("telephony/number[text() = '%s']", $values['number']))) {
                     foreach (['quickdial', 'vanity'] as $attribute) {
                         if (!empty($values[$attribute])) {
-                            $phone[0]->$attribute = $values[$attribute];
+                            if (isset($phone[0]->attributes()->$attribute)) {
+                                $phone[0]->attributes()->$attribute = $values[$attribute];
+                            } else {
+                                $phone[0]->addAttribute($attribute, $values[$attribute]);
+                            }
                         }
                     }
                 }
