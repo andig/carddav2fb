@@ -249,7 +249,7 @@ EOD
      */
     public function enrichVcard(Document $vcard): Document
     {
-        if ($vcard->{'X-ADDRESSBOOKSERVER-KIND'} == 'group') {
+        if (isset($vcard->{'X-ADDRESSBOOKSERVER-KIND'}) && $vcard->{'X-ADDRESSBOOKSERVER-KIND'} == 'group') {
             return $vcard;
         }
 
