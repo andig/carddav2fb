@@ -569,12 +569,11 @@ function getQuickdials(array $attributes, bool $alias = false)
 /**
  * upload background image to fritzbox
  *
- * @param SimpleXMLElement $phonebook
  * @param array $attributes
  * @param array $config
  * @return void
  */
-function uploadBackgroundImage($phonebook, $attributes, array $config)
+function uploadBackgroundImage($attributes, array $config)
 {
     $quickdials = getQuickdials($attributes, $config['quickdial_alias'] ?? false);
     if (!count($quickdials)) {
