@@ -62,6 +62,8 @@ class DownloadCommand extends Command
         if (file_put_contents($filename, $vCardContents) != false) {
             error_log(sprintf("Succesfully saved vCard(s) in %s", $filename));
         }
+
+        return 0;
     }
 
     /**
