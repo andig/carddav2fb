@@ -40,5 +40,7 @@ class BackgroundCommand extends Command
         } else {
             error_log('No destination phones are defined and/or the first phone book is not selected!');
         }
+
+        return 0;
     }
 }
