@@ -29,9 +29,12 @@ class RunCommand extends Command
     {
         $this->loadConfig($input);
 
-        if ($this->config['fritzbox']['ftp']['disabled']) {
+        $ftpDisabled = $this->config['fritzbox']['ftp']['disabled'] ?? false;
+        if ($ftpDisabled) {
             $input->setOption('image', false);
+            error_log('Images can only be uploaded if ftp is enabled!');
         }
+
         // we want to check for image upload show stoppers as early as possible
         if ($input->getOption('image')) {
             $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
@@ -93,7 +96,7 @@ class RunCommand extends Command
         // uploading background image
         if (count($this->config['fritzbox']['fritzfons']) &&
             $this->config['phonebook']['id'] == 0 &&
-            !$this->config['fritzbox']['ftp']['disabled']) {
+            !$ftpDisabled) {
             uploadBackgroundImage($savedAttributes, $this->config['fritzbox']);
         }
 

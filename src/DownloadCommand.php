@@ -32,14 +32,6 @@ class DownloadCommand extends Command
     {
         $this->loadConfig($input);
 
-        if ($this->config['fritzbox']['ftp']['disabled']) {
-            $input->setOption('image', false);
-        }
-        // we want to check for image upload show stoppers as early as possible
-        if ($input->getOption('image')) {
-            $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
-        }
-
         // download from server or local files
         $local = $input->getOption('local');
         $vcards = $this->downloadAllProviders($output, $input->getOption('image'), $local);
@@ -67,49 +59,5 @@ class DownloadCommand extends Command
         }
 
         return 0;
-    }
-
-    /**
-     * checks if preconditions for upload images are OK
-     *
-     * @return            mixed     (true if all preconditions OK, error string otherwise)
-     */
-    private function checkUploadImagePreconditions($configFritz, $configPhonebook)
-    {
-        if (!function_exists("ftp_connect")) {
-            throw new \Exception(
-                <<<EOD
-FTP functions not available in your PHP installation.
-Image upload not possible (remove -i switch).
-Ensure PHP was installed with --enable-ftp
-Ensure php.ini does not list ftp_* functions in 'disable_functions'
-In shell run: php -r \"phpinfo();\" | grep -i FTP"
-EOD
-            );
-        }
-        if (!$configFritz['fonpix']) {
-            throw new \Exception(
-                <<<EOD
-config.php missing fritzbox/fonpix setting.
-Image upload not possible (remove -i switch).
-EOD
-            );
-        }
-        if (!$configPhonebook['imagepath']) {
-            throw new \Exception(
-                <<<EOD
-config.php missing phonebook/imagepath setting.
-Image upload not possible (remove -i switch).
-EOD
-            );
-        }
-        if ($configFritz['user'] == 'dslf-conf') {
-            throw new \Exception(
-                <<<EOD
-TR-064 default user dslf-conf has no permission for ftp access.
-Image upload not possible (remove -i switch).
-EOD
-            );
-        }
     }
 }
