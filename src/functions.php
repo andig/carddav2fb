@@ -219,7 +219,7 @@ function uploadImages(array $vcards, array $config, array $phonebook, callable $
     $imgPath = rtrim($imgPath, '/') . '/';  // ensure one slash at end
 
     // Prepare FTP connection
-    $secure = @$config['ftp']['plain'] ? $config['ftp']['plain'] : false;
+    $secure = $config['ftp']['plain'] ?? false;
     $ftp_conn = getFtpConnection($config['url'], $config['user'], $config['password'], $config['fonpix'], $secure);
 
     // Build up dictionary to look up UID => current FTP image file
@@ -609,7 +609,7 @@ function uploadAttributes($phonebook, $config)
 
     error_log('Save internal data from recent FRITZ!Box phonebook!');
     // Prepare FTP connection
-    $secure = @$fritzbox['ftp']['plain'] ? $fritzbox['ftp']['plain'] : false;
+    $secure = $fritzbox['ftp']['plain'] ?? false;
     $ftp_conn = getFtpConnection($fritzbox['url'], $fritzbox['user'], $fritzbox['password'], '/FRITZ/mediabox', $secure);
     // backup already stored data
     if (ftp_size($ftp_conn, 'Attributes.csv') != -1) {                  // file already exists
@@ -648,7 +648,7 @@ function downloadAttributes($config)
     }
 
     // Prepare FTP connection
-    $secure = @$config['ftp']['plain'] ? $config['ftp']['plain'] : false;
+    $secure = $config['ftp']['plain'] ?? false;
     $ftp_conn = getFtpConnection($config['url'], $config['user'], $config['password'], '/FRITZ/mediabox', $secure);
     if (ftp_size($ftp_conn, 'Attributes.csv') == -1) {
         return [];
