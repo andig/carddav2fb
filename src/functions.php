@@ -163,6 +163,7 @@ function getJPEGimage($vcard)
             }
         } else {                                            // according to RFC 2426 this should be the usual case
             $mimeType = strtoupper($vcard->PHOTO['TYPE']);
+            $mimeType = str_replace("IMAGE/", '', $mimeType);
             $imageData = (string)$vcard->PHOTO;
         }
     } elseif ((string)$vcard->VERSION == '4.0') {
