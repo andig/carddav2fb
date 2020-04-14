@@ -3,12 +3,8 @@
 namespace Andig;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputDefinition;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\ProgressBar;
 
 class BackgroundCommand extends Command
 {
@@ -31,16 +27,16 @@ class BackgroundCommand extends Command
         $ftpDisabled = $this->config['fritzbox']['ftp']['disabled'] ?? false;
         if (count($this->config['fritzbox']['fritzfons']) &&
             $this->config['phonebook']['id'] == 0 && !$ftpDisabled) {
-            error_log('Downloading FRITZ!Box phonebook');
-            $xmlPhonebook = downloadPhonebook($this->config['fritzbox'], $this->config['phonebook']);
-            if (count($savedAttributes = uploadAttributes($xmlPhonebook, $this->config))) {
-                error_log('Numbers with special attributes saved' . PHP_EOL);
+            $output->writeln('<info>Downloading recent FRITZ!Box phonebook</info>');
+            $xmlPhonebook = downloadPhonebook($this->config['fritzbox'], $this->config['phonebook'], $output);
+            if (count($savedAttributes = uploadAttributes($xmlPhonebook, $this->config, $output))) {
+                $output->writeln('<info>Phone numbers with special attributes saved</info>');
             } else {                                                    // no attributes are set in the FRITZ!Box or lost
-                $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
+                $savedAttributes = downloadAttributes($this->config['fritzbox'], $output);   // try to get last saved attributes
             }
-            uploadBackgroundImage($savedAttributes, $this->config['fritzbox']);
+            uploadBackgroundImage($savedAttributes, $this->config['fritzbox'], $output);
         } else {
-            error_log('No destination phones are defined and/or the first phone book is not selected!');
+            $output->writeln('<comment>No destination phones are defined and/or the first phone book is not selected!</comment>');
         }
 
         return 0;

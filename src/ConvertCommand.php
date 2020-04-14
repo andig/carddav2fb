@@ -3,12 +3,10 @@
 namespace Andig;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\ProgressBar;
 
 class ConvertCommand extends Command
 {
@@ -35,7 +33,7 @@ class ConvertCommand extends Command
         $ftpDisabled = $this->config['fritzbox']['ftp']['disabled'] ?? false;
         if ($ftpDisabled) {
             $input->setOption('image', false);
-            error_log('Images can only be uploaded if ftp is enabled!');
+            $output->writeln('<comment>Images can only be uploaded if ftp is enabled!</comment>');
         }
 
         // we want to check for image upload show stoppers as early as possible
@@ -43,39 +41,42 @@ class ConvertCommand extends Command
             $this->checkUploadImagePreconditions($this->config['fritzbox'], $this->config['phonebook']);
         }
 
-        error_log("Reading vCard(s) from file " . $filename);
+        $output->writeln('<info>Reading vCard(s) from file ' . $filename . '</info>');
         $provider = localProvider($filename);
         $vcards = $this->downloadProvider($output, $provider);
-        error_log(sprintf("\nRead %d vCard(s)", count($vcards)));
+        $info = sprintf("\nRead %d vCard(s)", count($vcards));
+        $output->writeln('<info>' . $info . '</info>');
 
         // image upload
         if ($input->getOption('image')) {
-            error_log("Detaching and uploading image(s)");
+            $output->writeln('<info>Detaching and uploading image(s)</info>');
 
-            $progress = new ProgressBar($output);
+            $progress = getProgressBar($output);
             $progress->start(count($vcards));
-            $pictures = uploadImages($vcards, $this->config['fritzbox'], $this->config['phonebook'], function () use ($progress) {
+            $pictures = uploadImages($vcards, $this->config['fritzbox'], $this->config['phonebook'], $output, function () use ($progress) {
                 $progress->advance();
             });
             $progress->finish();
 
             if ($pictures) {
-                error_log(sprintf(PHP_EOL . "Uploaded/refreshed %d of %d image file(s)", $pictures[0], $pictures[1]));
+                $info = sprintf(PHP_EOL . "Uploaded/refreshed %d of %d image file(s)", $pictures[0], $pictures[1]);
+                $output->writeln('<info>' . $info . '</info>');
             }
         }
 
         // fritzbox format
-        $xmlPhonebook = exportPhonebook($vcards, $this->config);
-        error_log(sprintf(PHP_EOL."Converted %d vCard(s)", count($vcards)));
+        $xmlPhonebook = exportPhonebook($vcards, $this->config, $output);
+        $output->writeln('<info>' . sprintf(PHP_EOL."Converted %d vCard(s)", count($vcards)) . '</info>');
 
         if (!count($vcards)) {
-            error_log("Phonebook empty - skipping write to file");
+            $output->writeln('<comment>Phonebook empty - skipping write to file!</comment>');
             return 1;
         }
 
         $filename = $input->getArgument('destination');
         if ($xmlPhonebook->asXML($filename)) {
-            error_log(sprintf("Succesfull saved phonebook as %s", $filename));
+            $info = sprintf("Succesfull saved phonebook as %s", $filename);
+            $output->writeln('<info>' . $info . '</info>');
         }
 
         return 0;

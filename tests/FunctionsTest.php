@@ -1,19 +1,29 @@
 <?php
 
 use \PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Output\OutputInterface;
 use Sabre\VObject;
 
 class FunctionsTest extends TestCase
 {
-    /** @var \stdClass */
+    /** @var array */
     public $contacts;
+
+    /** @var OutputInterface */
+    private $output;
 
     public function setUp()
     {
         $this->contacts = $this->defaultContacts();
+        $this->output = $this->getOutputInterface();
     }
 
-    private function defaultContacts()
+    private function getOutputInterface(): OutputInterface
+    {
+        return new OutputInterface;
+    }
+
+    private function defaultContacts(): array
     {
         // definition of the test-takers
         $contacts = [
@@ -130,7 +140,7 @@ EOD;
      */
     public function testFilter(array $filter, int $residually)
     {
-        $res = Andig\filter($this->contacts, $filter);
+        $res = Andig\filter($this->contacts, $filter, $this->output);
         $this->assertCount($residually, $res);
     }
 }

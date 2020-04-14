@@ -2,6 +2,7 @@
 
 use \Andig\FritzBox\Converter;
 use \PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Output\OutputInterface;
 use Sabre\VObject;
 
 class ConverterTest extends TestCase
@@ -12,10 +13,19 @@ class ConverterTest extends TestCase
     /** @var \stdClass */
     public $contact;
 
+    /** @var OutputInterface */
+    public $output;
+
     public function setUp()
     {
-        $this->converter = new Converter($this->defaultConfig());
+        $this->output = $this->getOutputInterface();
+        $this->converter = new Converter($this->defaultConfig(), $this->output);
         $this->contact = $this->defaultContact();
+    }
+
+    private function getOutputInterface(): OutputInterface
+    {
+        return new OutputInterface;
     }
 
     private function defaultConfig(): array
@@ -111,7 +121,7 @@ class ConverterTest extends TestCase
     /**
      * @dataProvider contactPropertiesProvider
      */
-    public function testPropertyReplacement(array $properties, string $realName)
+    public function testPropertyReplacement(array $properties, string $realName, $output)
     {
         foreach ($properties as $key => $value) {
             $sabreKey = strtoupper($key);
@@ -126,7 +136,7 @@ class ConverterTest extends TestCase
             '{fullname}'
         ];
 
-        $res = (new Converter($config))->convert($this->contact);
+        $res = (new Converter($config, $output))->convert($this->contact);
         $this->assertCount(1, $res);
 
         $contact = $res[0];

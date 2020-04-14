@@ -7,6 +7,7 @@ use Sabre\VObject\Document;
 use Sabre\VObject\Reader;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @author Christian Putzke <christian.putzke@graviox.de>
@@ -50,23 +51,26 @@ class Backend
      */
     private $client;
 
+    /** @var OutputInterface */
+    private $output;
+
     /**
      * Constructor
      * Sets the CardDAV server url
      *
      * @param   string  $url    CardDAV server url
      */
-    public function __construct(string $url=null)
+    public function __construct(OutputInterface $output, string $url = null)
     {
         if ($url) {
             $this->setUrl($url);
         }
-
         $this->setClientOptions([
             'headers' => [
                 'Depth' => 1
             ]
         ]);
+        $this->output = $output;
     }
 
     /**
@@ -152,7 +156,7 @@ EOD
             ]);
         } catch (RequestException $e) {
             if ($e->hasResponse() && 404 == $e->getResponse()->getStatusCode()) {
-                error_log('Ignoring empty response from carddav REPORT request');
+                $this->output->writeln('<comment>Ignoring empty response from carddav REPORT request</comment>');
                 return [];
             }
 

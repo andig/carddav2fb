@@ -3,12 +3,10 @@
 namespace Andig;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\ProgressBar;
 
 class DownloadCommand extends Command
 {
@@ -35,16 +33,17 @@ class DownloadCommand extends Command
         // download from server or local files
         $local = $input->getOption('local');
         $vcards = $this->downloadAllProviders($output, $input->getOption('image'), $local);
-        error_log(sprintf("Downloaded %d vCard(s) in total", count($vcards)));
+        $info = sprintf("Downloaded %d vCard(s) in total", count($vcards));
+        $output->writeln('<info>' . $info . '</info>');
 
         // dissolve
         if ($input->getOption('dissolve')) {
-            $vcards = $this->processGroups($vcards);
+            $vcards = $this->processGroups($vcards, $output);
         }
 
         // filter
         if ($input->getOption('filter')) {
-            $vcards = $this->processFilters($vcards);
+            $vcards = $this->processFilters($vcards, $output);
         }
 
         // save to file
@@ -55,7 +54,8 @@ class DownloadCommand extends Command
 
         $filename = $input->getArgument('filename');
         if (file_put_contents($filename, $vCardContents) != false) {
-            error_log(sprintf("Succesfully saved vCard(s) in %s", $filename));
+            $info = sprintf("Succesfully saved vCard(s) in %s", $filename);
+            $output->writeln('<info>' . $info . '</info>');
         }
 
         return 0;
