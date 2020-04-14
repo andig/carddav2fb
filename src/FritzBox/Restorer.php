@@ -5,6 +5,7 @@ namespace Andig\FritzBox;
 use Andig\FritzBox\Converter;
 use Sabre\VObject\Document;
 use \SimpleXMLElement;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Copyright (c) 2019 Volker Püschel
@@ -17,9 +18,13 @@ class Restorer
 
     private $collums = [];
 
-    public function __construct()
+    /** @var OutputInterface */
+    private $output;
+
+    public function __construct(OutputInterface $output)
     {
         $this->collums = explode(',', self::CSV_HEADER);
+        $this->output = $output;
     }
 
     /**
@@ -65,7 +70,7 @@ class Restorer
             return [];
         }
 
-        $converter = new Converter($conversions);
+        $converter = new Converter($conversions, $this->output);
         $phonebookData = [];
         $numbers = $xmlPhonebook->xpath('//number[@quickdial or @vanity] | //number[starts-with(text(),"**")]');
         foreach ($numbers as $number) {
@@ -137,7 +142,7 @@ class Restorer
     {
         $root = $xmlTargetPhoneBook->xpath('//phonebook')[0];
 
-        error_log('Restoring saved attributes (quickdial, vanity) and internal numbers');
+        $this->output->writeln('<info>Restoring saved attributes (quickdial, vanity) and internal numbers</info>');
         foreach ($attributes as $key => $values) {
             if (substr($values['number'], 0, 2) == '**') {      // internal number
                 $contact = $this->getInternalContact($key, $values);

@@ -5,6 +5,7 @@ namespace Andig\CardDav;
 use Andig\CardDav\Backend;
 use Sabre\VObject\Document;
 use Sabre\VObject\Splitter\VCard;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @author Volker Püschel <knuffy@anasco.de>
@@ -19,9 +20,9 @@ class VcardFile extends Backend
      */
     private $fullpath;
 
-    public function __construct(string $fullpath = null)
+    public function __construct(OutputInterface $output, string $fullpath = null)
     {
-        parent::__construct();
+        parent::__construct($output);
         $this->fullpath = $fullpath;
     }
 
@@ -36,12 +37,16 @@ class VcardFile extends Backend
             return [];
         }
         if (!file_exists($this->fullpath)) {
-            error_log(sprintf('File %s not found!', $this->fullpath));
+            $error = sprintf('File %s not found!', $this->fullpath);
+            $this->output->writeln('<error>' . $error . '</error>');
+
             return [];
         }
         $vcf = fopen($this->fullpath, 'r');
         if (!$vcf) {
-            error_log(sprintf('File %s open failed!', $this->fullpath));
+            $error = sprintf('File %s open failed!', $this->fullpath);
+            $this->output->writeln('<error>' . $error . '</error>');
+
             return [];
         }
         $cards = [];
@@ -50,7 +55,8 @@ class VcardFile extends Backend
             if ($vCard instanceof Document) {
                 $cards[] = $this->enrichVcard($vCard);
             } else {
-                error_log('Unexpected type: ' . get_class($vCard));
+                $error = 'Unexpected type: ' . get_class($vCard);
+                $this->output->writeln('<error>' . $error . '</error>');
             }
 
             $this->progress();

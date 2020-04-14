@@ -4,6 +4,7 @@ namespace Andig\FritzBox;
 
 use Andig;
 use \SimpleXMLElement;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class Converter
 {
@@ -12,11 +13,15 @@ class Converter
     /** @var SimpleXMLElement */
     private $contact;
 
+    /** @var OutputInterface */
+    private $output;
+
     private $phoneSort = [];
 
-    public function __construct(array $config)
+    public function __construct(array $config, OutputInterface $output)
     {
         $this->config = $config['conversions'];
+        $this->output = $output;
         $this->phoneSort = $this->getPhoneTypesSortOrder();
     }
 
@@ -33,10 +38,13 @@ class Converter
         $adresses = $this->getEmailAdresses($card);         // get array of prequalified email adresses
 
         $contacts = [];
+        $realName = htmlspecialchars($this->getProperty($card, 'realName'));
         if (count($allNumbers) > 9) {
-            error_log("Contact with >9 phone numbers will be split");
+            $comment = sprintf('Split "%s", >9 phone numbers', $realName);
+            $this->output->writeln('<comment>' . $comment . '</comment>');
         } elseif (count($allNumbers) == 0) {
-            error_log("Contact without phone numbers will be skipped");
+            $comment = sprintf('Skipped "%s", no phone numbers', $realName);
+            $this->output->writeln('<comment>' . $comment . '</comment>');
         }
 
         foreach (array_chunk($allNumbers, 9) as $numbers) {
@@ -53,7 +61,7 @@ class Converter
 
             // add Person
             $person = $this->contact->addChild('person');
-            $realName = htmlspecialchars($this->getProperty($card, 'realName'));
+            //$realName = htmlspecialchars($this->getProperty($card, 'realName'));
             $person->addChild('realName', $realName);
 
             // add photo
@@ -292,7 +300,7 @@ class Converter
             }, $rule);
         }
 
-        error_log("No data for conversion `$property`");
+        $this->output->writeln('<error>No data for conversion `' . $property . '`</error>');
         return '';
     }
 }

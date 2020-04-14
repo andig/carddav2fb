@@ -3,9 +3,7 @@
 namespace Andig;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -32,13 +30,13 @@ class UploadCommand extends Command
         $xmlPhonebook = simplexml_load_string($xmlPhonebookStr);
 
         if ($this->config['phonebook']['id'] == 0) {                // only the first phonebook has special attributes
-            $savedAttributes = downloadAttributes($this->config['fritzbox']);   // try to get last saved attributes
-            $xmlPhonebook = mergeAttributes($xmlPhonebook, $savedAttributes);
+            $savedAttributes = downloadAttributes($this->config['fritzbox'], $output);   // try to get last saved attributes
+            $xmlPhonebook = mergeAttributes($xmlPhonebook, $savedAttributes, $output);
         }
 
-        error_log("Uploading FRITZ!Box phonebook");
+        $output->writeln('<info>Uploading FRITZ!Box phonebook</info>');
         uploadPhonebook($xmlPhonebook, $this->config);
-        error_log("Successful uploaded new FRITZ!Box phonebook");
+        $output->writeln('<info>Successful uploaded new FRITZ!Box phonebook</info>');
 
         return 1;
     }

@@ -3,6 +3,7 @@
 namespace Andig\FritzBox;
 
 use Andig\FritzBox\Api;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Copyright (c) 2019 Volker Püschel
@@ -20,8 +21,12 @@ class BackgroundImage
     /** @var int */
     protected $textColor;
 
-    public function __construct()
+    /** @var OutputInterface */
+    private $output;
+
+    public function __construct(OutputInterface $output)
     {
+        $this->output = $output;
         $this->bgImage = $this->getImageAsset(dirname(__DIR__, 2) . '/assets/keypad.jpg');
         putenv('GDFONTPATH=' . realpath('.'));
         $this->setFont(dirname(__DIR__, 2) . '/assets/impact.ttf');
@@ -212,15 +217,16 @@ EOD;
                 continue;
             }
 
-            error_log(sprintf("Uploading background image to FRITZ!Fon #%s", $phone));
+            $info = sprintf("Uploading background image to FRITZ!Fon #%s", $phone);
+            $this->output->writeln('<info>' . $info . '</info>');
 
             $body = $this->getBody($fritz->getSID(), $phone, $backgroundImage);
             $result = $fritz->postImage($body);
             if (strpos($result, 'Das Bild wurde erfolgreich hinzugefügt') ||
                 strpos($result, 'The image was added successfully')) {
-                error_log('Background image upload successful');
+                $this->output->writeln('<info>Background image upload successful</info>');
             } else {
-                error_log('Background image upload failed');
+                $this->output->writeln('<comment>Background image upload failed</comment>');
             }
         }
     }

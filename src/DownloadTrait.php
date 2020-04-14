@@ -10,6 +10,21 @@ use Symfony\Component\Console\Helper\ProgressBar;
 trait DownloadTrait
 {
     /**
+     * get progress bar in info scheme (green)
+     *
+     * @param OutputInterface $output
+     * @return ProgressBar
+     */
+    public function getProgressBar(OutputInterface $output): ProgressBar
+    {
+        $progress = new ProgressBar($output);
+        $progress->setFormatDefinition('info', '<info>%current% [%bar%]</info>');
+        $progress->setFormat('info');
+
+        return $progress;
+    }
+
+    /**
      * Default list of card attributes to substitute
      *
      * @return array
@@ -28,7 +43,7 @@ trait DownloadTrait
      */
     public function downloadProvider(OutputInterface $output, Backend $provider): array
     {
-        $progress = new ProgressBar($output);
+        $progress = self::getProgressBar($output);
         $progress->start();
         $cards = download($provider, function () use ($progress) {
             $progress->advance();
@@ -50,26 +65,28 @@ trait DownloadTrait
         $vcards = [];
 
         foreach ($local as $file) {
-            error_log("Reading vCard(s) from file ".$file);
+            $output->writeln('<info>Reading vCard(s) from file '. $file . '</info>');
 
             $provider = localProvider($file);
             $cards = $this->downloadProvider($output, $provider);
 
-            error_log(sprintf("\nRead %d vCard(s)", count($cards)));
+            $info = sprintf("\nRead %d vCard(s)", count($cards));
+            $output->writeln('<info>' . $info . '</info>');
             $vcards = array_merge($vcards, $cards);
         }
 
         foreach ($this->config['server'] as $server) {
-            error_log("Downloading vCard(s) from account ".$server['user']);
+            $output->writeln('<info>Downloading vCard(s) from account ' . $server['user'] . '</info>');
 
-            $provider = backendProvider($server);
+            $provider = backendProvider($server, $output);
             if ($downloadImages) {
                 $substitutes = $this->getDefaultSubstitutes();
                 $provider->setSubstitutes($substitutes);
             }
             $cards = $this->downloadProvider($output, $provider);
 
-            error_log(sprintf("\nDownloaded %d vCard(s)", count($cards)));
+            $info = sprintf("\nDownloaded %d vCard(s)", count($cards));
+            $output->writeln('<info>' . $info . '</info>');
             $vcards = array_merge($vcards, $cards);
         }
 
@@ -82,13 +99,13 @@ trait DownloadTrait
      * @param mixed[] $vcards
      * @return mixed[]
      */
-    public function processGroups(array $vcards): array
+    public function processGroups(array $vcards, $output): array
     {
         $quantity = count($vcards);
-
-        error_log("Dissolving groups (e.g. iCloud)");
+        $output->writeln('<info>Dissolving groups (e.g. iCloud)</info>');
         $vcards = dissolveGroups($vcards);
-        error_log(sprintf("Dissolved %d group(s)", $quantity - count($vcards)));
+        $info = sprintf("Dissolved %d group(s)", $quantity - count($vcards));
+        $output->writeln('<info>' . $info . '</info>');
 
         return $vcards;
     }
@@ -97,15 +114,18 @@ trait DownloadTrait
      * Filter included/excluded vcards
      *
      * @param mixed[] $vcards
+     * @param OutputInterface $output
      * @return mixed[]
      */
-    public function processFilters(array $vcards): array
+    public function processFilters(array $vcards, OutputInterface $output): array
     {
         $quantity = count($vcards);
 
-        error_log(sprintf("Filtering %d vCard(s)", $quantity));
-        $vcards = filter($vcards, $this->config['filters']);
-        error_log(sprintf("Filtered %d vCard(s)", $quantity - count($vcards)));
+        $info = sprintf("Filtering %d vCard(s)", $quantity);
+        $output->writeln('<info>' . $info . '</info>');
+        $vcards = filter($vcards, $this->config['filters'], $output);
+        $info = sprintf("Filtered %d vCard(s)", $quantity - count($vcards));
+        $output->writeln('<info>' . $info . '</info>');
 
         return $vcards;
     }

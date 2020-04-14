@@ -10,6 +10,7 @@ use Andig\FritzBox\BackgroundImage;
 use Andig\FritzBox\Restorer;
 use Sabre\VObject\Document;
 use \SimpleXMLElement;
+use Symfony\Component\Console\Output\OutputInterface;
 
 // see: https://avm.de/service/fritzbox/fritzbox-7490/wissensdatenbank/publication/show/300_Hintergrund-und-Anruferbilder-in-FRITZ-Fon-einrichten/
 define("MAX_IMAGE_COUNT", 150);
@@ -20,11 +21,11 @@ define("MAX_IMAGE_COUNT", 150);
  * @param array $config
  * @return Backend
  */
-function backendProvider(array $config): Backend
+function backendProvider(array $config, $output): Backend
 {
     $options = $config['server'] ?? $config;
 
-    $backend = new Backend($options['url']);
+    $backend = new Backend($output, $options['url']);
     $backend->setAuth($options['user'], $options['password']);
     $backend->mergeClientOptions($options['http'] ?? []);
 
@@ -203,10 +204,11 @@ function getJPEGimage($vcard)
  * @param Document[] $vcards downloaded vCards
  * @param array $config
  * @param array $phonebook
+ * @param OutputInterface $output
  * @param callable $callback
  * @return mixed false or [number of uploaded images, number of total found images]
  */
-function uploadImages(array $vcards, array $config, array $phonebook, callable $callback=null)
+function uploadImages(array $vcards, array $config, array $phonebook, OutputInterface $output, callable $callback=null)
 {
     $countUploadedImages = 0;
     $countAllImages = 0;
@@ -247,7 +249,8 @@ function uploadImages(array $vcards, array $config, array $phonebook, callable $
 
         // Occurs when embedding was not possible during download (for example, no access to linked data)
         if (preg_match("/^http/", $vcard->PHOTO)) {             // if the embed failed
-            error_log(sprintf(PHP_EOL . 'The image for UID %s can not be accessed! ', $uid));
+            $comment = sprintf(PHP_EOL . 'The image for UID %s can not be accessed! ', $uid);
+            $output->writeln('<comment>' . $comment . '</comment>');
             continue;
         }
         // Fritz!Box only accept jpg-files
@@ -281,7 +284,8 @@ function uploadImages(array $vcards, array $config, array $phonebook, callable $
             // upload of new image done, now store new image URL in vCard (new Random Postfix!)
             $vcard->IMAGEURL = $imgPath . $newFTPimage;
         } else {
-            error_log(PHP_EOL."Error uploading $newFTPimage.");
+            $comment = PHP_EOL . 'Error uploading ' . $newFTPimage . '!';
+            $output->writeln('<comment>' . $comment . '</comment>');
             unset($vcard->PHOTO);                              // no wrong link will set in phonebook
             unset($vcard->IMAGEURL);                           // no wrong link will set in phonebook
         }
@@ -290,11 +294,12 @@ function uploadImages(array $vcards, array $config, array $phonebook, callable $
     @ftp_close($ftp_conn);
 
     if ($countAllImages > MAX_IMAGE_COUNT) {
-        error_log(sprintf(<<<EOD
+        $comment = sprintf(<<<EOD
 WARNING: You have %d contact images on FritzBox. FritzFon may handle only up to %d images.
          Some images may not display properly, see: https://github.com/andig/carddav2fb/issues/92.
 EOD
-        , $countAllImages, MAX_IMAGE_COUNT));
+        , $countAllImages, MAX_IMAGE_COUNT);
+        $output->writeln('<comment>' . $comment. '<comment>');
     }
 
     return [$countUploadedImages, $countAllImages];
@@ -347,9 +352,10 @@ function dissolveGroups(array $vcards): array
  *
  * @param mixed[] $vcards
  * @param array $filters
+ * @param OutputInterface $output
  * @return mixed[]
  */
-function filter(array $vcards, array $filters): array
+function filter(array $vcards, array $filters, OutputInterface $output): array
 {
     // include selected
     $includeFilter = $filters['include'] ?? [];
@@ -364,7 +370,7 @@ function filter(array $vcards, array $filters): array
     } else {
         // filter defined but empty sub-rules?
         if (count($includeFilter)) {
-            error_log('Include filter is empty: including all downloaded vCards');
+            $output->writeln('<comment>Include filter is empty: including all downloaded vCards</comment>');
         }
 
         // include all by default
@@ -431,9 +437,10 @@ function filtersMatch(Document $vcard, array $filters): bool
  *
  * @param Document[] $cards
  * @param array $conversions
+ * @param OutputInterface $output
  * @return SimpleXMLElement     the XML phone book in Fritz Box format
  */
-function exportPhonebook(array $cards, array $conversions): SimpleXMLElement
+function exportPhonebook(array $cards, array $conversions, OutputInterface $output): SimpleXMLElement
 {
     $xmlPhonebook = new SimpleXMLElement(
         <<<EOT
@@ -447,8 +454,8 @@ EOT
     $root = $xmlPhonebook->xpath('//phonebook')[0];
     $root->addAttribute('name', $conversions['phonebook']['name']);
 
-    $converter = new Converter($conversions);
-    $restore = new Restorer;
+    $converter = new Converter($conversions, $output);
+    $restore = new Restorer($output);
 
     foreach ($cards as $card) {
         $contacts = $converter->convert($card);
@@ -512,9 +519,10 @@ function uploadSuccessful(string $msg): bool
  *
  * @param   array $fritzbox
  * @param   array $phonebook
+ * @param OutputInterface $output
  * @return  SimpleXMLElement|bool with the old existing phonebook
  */
-function downloadPhonebook(array $fritzbox, array $phonebook)
+function downloadPhonebook(array $fritzbox, array $phonebook, OutputInterface $output)
 {
     $fritz = new Api($fritzbox['url']);
     $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
@@ -528,7 +536,8 @@ function downloadPhonebook(array $fritzbox, array $phonebook)
     ];
     $result = $fritz->postFile($formfields, []); // send the command to load existing phone book
     if (substr($result, 0, 5) !== "<?xml") {
-        error_log("ERROR: Could not load phonebook with ID=".$phonebook['id']);
+        $error = 'ERROR: Could not load phonebook with ID='.$phonebook['id'];
+        $output->writeln('<error>'. $error .'</error>');
         return false;
     }
     $xmlPhonebook = simplexml_load_string($result);
@@ -572,21 +581,22 @@ function getQuickdials(array $attributes, bool $alias = false)
  *
  * @param array $attributes
  * @param array $config
+ * @param OutputInterface $output
  * @return void
  */
-function uploadBackgroundImage($attributes, array $config)
+function uploadBackgroundImage($attributes, array $config, OutputInterface $output)
 {
     $quickdials = getQuickdials($attributes, $config['quickdial_alias'] ?? false);
     if (!count($quickdials)) {
-        error_log('No quickdial numbers are set for a background image upload');
+        $output->writeln('<comment>No quickdial numbers are set for a background image upload</comment>');
         return;
     }
     if (key($quickdials) > 9) {    // usual the pointer should on the first element; with 7.3.*: array_key_first()
-        error_log('Quickdial numbers out of range for a background image upload');
+        $output->writeln('<comment>Quickdial numbers out of range for a background image upload!</comment>');
         return;
     }
 
-    $image = new BackgroundImage();
+    $image = new BackgroundImage($output);
     $image->uploadImage($quickdials, $config);
 }
 
@@ -595,20 +605,21 @@ function uploadBackgroundImage($attributes, array $config)
  *
  * @param SimpleXMLElement $phonebook
  * @param array $config
+ * @param OutputInterface $output
  * @return array
  */
-function uploadAttributes($phonebook, $config)
+function uploadAttributes(SimpleXMLElement $phonebook, array $config, OutputInterface $output)
 {
     $fritzbox = $config['fritzbox'];
-    $restore = new Restorer;
+    $restore = new Restorer($output);
     $ftpDisabled = $fritzbox['ftp']['disabled'] ?? false;
     if ($ftpDisabled ||
         !count($specialAttributes = $restore->getPhonebookData($phonebook, $config))) {
-        error_log('No special attributes are saved!');
+        $output->writeln('<comment>No special attributes are saved!</comment>');
         return [];
     }
 
-    error_log('Save internal data from recent FRITZ!Box phonebook!');
+    $output->writeln('<info>Save internal data from recent FRITZ!Box phonebook</info>');
     // Prepare FTP connection
     $secure = $fritzbox['ftp']['plain'] ?? false;
     $ftp_conn = getFtpConnection($fritzbox['url'], $fritzbox['user'], $fritzbox['password'], '/FRITZ/mediabox', $secure);
@@ -626,7 +637,7 @@ function uploadAttributes($phonebook, $config)
     fputs($memstream, $rows);
     rewind($memstream);
     if (!ftp_fput($ftp_conn, 'Attributes.csv', $memstream, FTP_BINARY)) {
-        error_log('Error uploading Attributes.csv!' . PHP_EOL);
+        $output->writeln('<comment>Error uploading Attributes.csv!</comment>');
     }
     fclose($memstream);
     @ftp_close($ftp_conn);
@@ -638,13 +649,14 @@ function uploadAttributes($phonebook, $config)
  * get saved special attributes from internal FRITZ!Box memory (../FRITZ/mediabox)
  *
  * @param array $config
+ * @param OutputInterface $output
  * @return array
  */
-function downloadAttributes($config)
+function downloadAttributes(array $config, OutputInterface $output)
 {
     $ftpDisabled = $config['ftp']['disabled'] ?? false;
     if ($ftpDisabled) {
-        error_log('Ftp is not available or disabled. Special attributes cannot be loaded!');
+        $output->writeln('<comment>Ftp is not available or disabled. Special attributes cannot be loaded!</comment>');
         return [];
     }
 
@@ -655,7 +667,7 @@ function downloadAttributes($config)
         return [];
     }
 
-    $restore = new Restorer;
+    $restore = new Restorer($output);
     $specialAttributes = [];
     $csvFile = fopen('php://temp', 'r+');
     if (ftp_fget($ftp_conn, $csvFile, 'Attributes.csv', FTP_BINARY)) {
@@ -676,14 +688,15 @@ function downloadAttributes($config)
  *
  * @param SimpleXMLElement $xmlTargetPhoneBook
  * @param array $attributes array of special attributes
+ * @param OutputInterface $output
  * @return SimpleXMLElement phonebook with restored special attributes
  */
-function mergeAttributes(SimpleXMLElement $xmlTargetPhoneBook, array $attributes)
+function mergeAttributes(SimpleXMLElement $xmlTargetPhoneBook, array $attributes, OutputInterface $output)
 {
     if (!$attributes) {
         return $xmlTargetPhoneBook;
     }
-    $restore = new Restorer;
+    $restore = new Restorer($output);
     $xmlTargetPhoneBook = $restore->setPhonebookData($xmlTargetPhoneBook, $attributes);
 
     return $xmlTargetPhoneBook;

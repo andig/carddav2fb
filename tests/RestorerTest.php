@@ -2,6 +2,7 @@
 
 use \Andig\FritzBox\Restorer;
 use \PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class RestorerTest extends TestCase
 {
@@ -10,7 +11,7 @@ class RestorerTest extends TestCase
 
     public function setUp()
     {
-        $this->restore = new Restorer;
+        $this->restore = new Restorer(new OutputInterface);
     }
 
     private function defaultConfig(): array
