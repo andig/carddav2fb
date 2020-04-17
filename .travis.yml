@@ -3,7 +3,7 @@ sudo: false
 language: php
 
 php: 
-  - "7.1"
+  - "7.3"
 
 cache:
   directories:
@@ -28,7 +28,7 @@ jobs:
       install:
         - composer install
       script:
-        - vendor/bin/phpunit
+        - ./vendor/bin/phpunit
     - # parallel
       install:
         - rm -f ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini
