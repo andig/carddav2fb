@@ -17,7 +17,8 @@ $config = [
             'http' => [           // http client options are directly passed to Guzzle http client
                 // 'verify' => false, // uncomment to disable certificate check
                 // 'auth' => 'digest', // uncomment for digest auth
-            ]
+            ],
+            // 'method' => 'PROPFIND';  // uncomment if 'REPORT' (default) causes an error (e.g. t-online)
         ],
 /* add as many as you need
         [

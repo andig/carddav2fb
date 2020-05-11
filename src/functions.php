@@ -23,8 +23,9 @@ define("MAX_IMAGE_COUNT", 150);
 function backendProvider(array $config): Backend
 {
     $options = $config['server'] ?? $config;
+    $method = $options['method'] ?? 'REPORT';
 
-    $backend = new Backend($options['url']);
+    $backend = new Backend($options['url'], $method);
     $backend->setAuth($options['user'], $options['password']);
     $backend->mergeClientOptions($options['http'] ?? []);
 

@@ -51,22 +51,28 @@ class Backend
     private $client;
 
     /**
+     * Request method
+     * @var string
+     */
+    private $method;
+
+    /**
      * Constructor
      * Sets the CardDAV server url
      *
      * @param   string  $url    CardDAV server url
      */
-    public function __construct(string $url=null)
+    public function __construct(string $url = null, $method)
     {
         if ($url) {
             $this->setUrl($url);
         }
-
         $this->setClientOptions([
             'headers' => [
                 'Depth' => 1
             ]
         ]);
+        $this->method = $method;
     }
 
     /**
@@ -135,12 +141,18 @@ class Backend
      */
     public function getVcards(): array
     {
-        try {
-            $response = $this->getCachedClient()->request('REPORT', $this->url, [
-                'headers' => [
-                    'Content-Type' => 'application/xml',
-                ],
-                'body' => <<<EOD
+        if ($this->method == 'PROPFIND') {
+            $body = <<<EOD
+<?xml version="1.0" encoding="utf-8"?>
+<d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:carddav">
+    <d:prop>
+        <c:address-data />
+        <d:getetag />
+    </d:prop>
+</d:propfind>
+EOD;
+        } else {
+            $body = <<<EOD
 <?xml version="1.0" encoding="utf-8"?>
 <C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
     <D:prop>
@@ -148,7 +160,15 @@ class Backend
         <C:address-data content-type="text/vcard"/>
     </D:prop>
 </C:addressbook-query>
-EOD
+EOD;
+        }
+
+        try {
+            $response = $this->getCachedClient()->request($this->method, $this->url, [
+                'headers' => [
+                    'Content-Type' => 'application/xml',
+                ],
+                'body' => $body
             ]);
         } catch (RequestException $e) {
             if ($e->hasResponse() && 404 == $e->getResponse()->getStatusCode()) {
@@ -163,7 +183,6 @@ EOD
         $cards = [];
         $body = $this->stripNamespaces((string)$response->getBody());
         $xml = new \SimpleXMLElement($body);
-
         // NOTE: instead of stripping the namespaces they could also be queried using xpath:
         // $xml->registerXPathNamespace('dav', 'DAV:');
         // $xml->registerXPathNamespace('card', 'urn:ietf:params:xml:ns:carddav');
@@ -172,6 +191,9 @@ EOD
         foreach ($xml->response as $response) {
             foreach ($response->propstat->prop as $prop) {
                 $content = (string)$prop->{'address-data'};
+                if (empty($content)) {              // PROPFIND: first node is empty
+                    continue;
+                }
 
                 $vcard = Reader::read($content);
                 $vcard = $this->enrichVcard($vcard);
