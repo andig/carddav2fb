@@ -88,7 +88,7 @@ an example file to the volume.
 
 There are two ways to use the image:
 
-    docker run --rm -v ./carddav2fb-config:/data andig/carddav2fb command...
+    docker run --rm -v $(pwd)/carddav2fb-config:/data andig/carddav2fb command...
 
 will execute a single command (and remove the created container
 afterwards).

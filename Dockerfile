@@ -1,4 +1,4 @@
-FROM alpine:3.10
+FROM alpine:3.11
 LABEL description="Download CardDAV VCards and upload as phonebook to AVM FRITZ!Box"
 
 VOLUME [ "/data" ]
