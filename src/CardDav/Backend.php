@@ -144,20 +144,20 @@ class Backend
         if ($this->method == 'PROPFIND') {
             $body = <<<EOD
 <?xml version="1.0" encoding="utf-8"?>
-<d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:carddav">
-    <d:prop>
-        <c:address-data />
-        <d:getetag />
-    </d:prop>
-</d:propfind>
+<D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
+    <D:prop>
+        <C:address-data content-type="text/vcard"/>
+        <D:getetag/>
+    </D:prop>
+</D:propfind>
 EOD;
         } else {
             $body = <<<EOD
 <?xml version="1.0" encoding="utf-8"?>
 <C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
     <D:prop>
-        <D:getetag/>
         <C:address-data content-type="text/vcard"/>
+        <D:getetag/>
     </D:prop>
 </C:addressbook-query>
 EOD;
