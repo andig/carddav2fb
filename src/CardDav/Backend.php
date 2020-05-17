@@ -62,7 +62,7 @@ class Backend
      *
      * @param   string  $url    CardDAV server url
      */
-    public function __construct(string $url = null, $method)
+    public function __construct(string $url = null, $method = 'REPORT')
     {
         if ($url) {
             $this->setUrl($url);

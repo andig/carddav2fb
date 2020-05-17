@@ -21,7 +21,7 @@ class VcardFile extends Backend
 
     public function __construct(string $fullpath = null)
     {
-        parent::__construct(null, '');
+        parent::__construct();
         $this->fullpath = $fullpath;
     }
 
