@@ -428,13 +428,31 @@ function filtersMatch(Document $vcard, array $filters): bool
 }
 
 /**
+ * convert vCards into contacts of FRITZ!box xml format
+ *
+ * @param Document[] $cards
+ * @param array $conversions
+ * @return SimpleXMLElement[] the XML phone book format
+ */
+function convertVCards(array $cards, array $conversions): array
+{
+    $converter = new Converter($conversions);
+    $contacts = [];
+
+    foreach ($cards as $card) {
+        $contacts = array_merge($contacts, $converter->convert($card));
+    }
+    return $contacts;
+}
+
+/**
  * Export cards to fritzbox xml
  *
  * @param Document[] $cards
  * @param array $conversions
  * @return SimpleXMLElement     the XML phone book in Fritz Box format
  */
-function exportPhonebook(array $cards, array $conversions): SimpleXMLElement
+function getPhonebook(array $contacts, array $conversions): SimpleXMLElement
 {
     $xmlPhonebook = new SimpleXMLElement(
         <<<EOT
@@ -448,16 +466,30 @@ EOT
     $root = $xmlPhonebook->xpath('//phonebook')[0];
     $root->addAttribute('name', $conversions['phonebook']['name']);
 
-    $converter = new Converter($conversions);
     $restore = new Restorer;
 
-    foreach ($cards as $card) {
-        $contacts = $converter->convert($card);
-        foreach ($contacts as $contact) {
-            $restore->xml_adopt($root, $contact);
-        }
+    foreach ($contacts as $contact) {
+        $restore->xml_adopt($root, $contact);
     }
+
     return $xmlPhonebook;
+}
+
+/**
+ * get secure access to FRITZ!Box router
+ *
+ * @param array $fritzbox credentials
+ * @return Api $fritz
+ */
+
+function getFritzBoxAccess($fritzbox)
+{
+    $fritz = new Api($fritzbox['url']);
+    $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
+    $fritz->mergeClientOptions($fritzbox['http'] ?? []);
+    $fritz->login();
+
+    return $fritz;
 }
 
 /**
@@ -467,17 +499,12 @@ EOT
  * @param array             $config
  * @return void
  */
-function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $config)
+function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $fritzbox, array $phonebook)
 {
-    $options = $config['fritzbox'];
-
-    $fritz = new Api($options['url']);
-    $fritz->setAuth($options['user'], $options['password']);
-    $fritz->mergeClientOptions($options['http'] ?? []);
-    $fritz->login();
+    $fritz = getFritzBoxAccess($fritzbox);
 
     $formfields = [
-        'PhonebookId' => $config['phonebook']['id']
+        'PhonebookId' => $phonebook['id']
     ];
 
     $filefields = [
@@ -517,10 +544,7 @@ function uploadSuccessful(string $msg): bool
  */
 function downloadPhonebook(array $fritzbox, array $phonebook)
 {
-    $fritz = new Api($fritzbox['url']);
-    $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
-    $fritz->mergeClientOptions($fritzbox['http'] ?? []);
-    $fritz->login();
+    $fritz = getFritzBoxAccess($fritzbox);
 
     $formfields = [
         'PhonebookId' => $phonebook['id'],
