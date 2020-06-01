@@ -461,6 +461,23 @@ EOT
 }
 
 /**
+ * get secure access to FRITZ!Box router
+ *
+ * @param array $fritzbox credentials
+ * @return Api $fritz
+ */
+
+function getFritzBoxAccess($fritzbox)
+{
+    $fritz = new Api($fritzbox['url']);
+    $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
+    $fritz->mergeClientOptions($fritzbox['http'] ?? []);
+    $fritz->login();
+
+    return $fritz;
+}
+
+/**
  * Upload cards to fritzbox
  *
  * @param SimpleXMLElement  $xmlPhonebook
@@ -469,10 +486,7 @@ EOT
  */
 function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $fritzbox, array $phonebook)
 {
-    $fritz = new Api($fritzbox['url']);
-    $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
-    $fritz->mergeClientOptions($fritzbox['http'] ?? []);
-    $fritz->login();
+    $fritz = getFritzBoxAccess($fritzbox);
 
     $formfields = [
         'PhonebookId' => $phonebook['id']
@@ -515,10 +529,7 @@ function uploadSuccessful(string $msg): bool
  */
 function downloadPhonebook(array $fritzbox, array $phonebook)
 {
-    $fritz = new Api($fritzbox['url']);
-    $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
-    $fritz->mergeClientOptions($fritzbox['http'] ?? []);
-    $fritz->login();
+    $fritz = getFritzBoxAccess($fritzbox);
 
     $formfields = [
         'PhonebookId' => $phonebook['id'],
