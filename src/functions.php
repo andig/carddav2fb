@@ -428,13 +428,31 @@ function filtersMatch(Document $vcard, array $filters): bool
 }
 
 /**
- * Export cards to fritzbox xml
+ * convert vCards into contacts of FRITZ!box xml format
  *
  * @param Document[] $cards
  * @param array $conversions
+ * @return SimpleXMLElement[] fritzbox XML contact format
+ */
+function convertVCards(array $cards, array $conversions): array
+{
+    $converter = new Converter($conversions);
+    $contacts = [];
+
+    foreach ($cards as $card) {
+        $contacts = array_merge($contacts, $converter->convert($card));
+    }
+    return $contacts;
+}
+
+/**
+ * get contacts in fritzbox xml format
+ *
+ * @param SimpleXMLElement[] $contacts
+ * @param array $conversions
  * @return SimpleXMLElement     the XML phone book in Fritz Box format
  */
-function exportPhonebook(array $cards, array $conversions): SimpleXMLElement
+function getPhonebook(array $contacts, array $conversions): SimpleXMLElement
 {
     $xmlPhonebook = new SimpleXMLElement(
         <<<EOT
@@ -448,14 +466,10 @@ EOT
     $root = $xmlPhonebook->xpath('//phonebook')[0];
     $root->addAttribute('name', $conversions['phonebook']['name']);
 
-    $converter = new Converter($conversions);
     $restore = new Restorer;
 
-    foreach ($cards as $card) {
-        $contacts = $converter->convert($card);
-        foreach ($contacts as $contact) {
-            $restore->xml_adopt($root, $contact);
-        }
+    foreach ($contacts as $contact) {
+        $restore->xml_adopt($root, $contact);
     }
     return $xmlPhonebook;
 }

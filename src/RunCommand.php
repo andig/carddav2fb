@@ -76,14 +76,18 @@ class RunCommand extends Command
             }
         }
 
-        // fritzbox format
-        $xmlPhonebook = exportPhonebook($vcards, $this->config);
-        error_log(sprintf(PHP_EOL."Converted %d vCard(s)", count($vcards)));
+        // convert fritzbox format
+        error_log("Converting vCard(s)");
+        $contacts = convertVCards($vcards, $this->config);
+        error_log(sprintf("Converted %d vCard(s) into %d contacts", count($vcards), count($contacts)));
 
-        if (!count($vcards)) {
-            error_log("Phonebook empty - skipping upload");
+        if (!count($contacts)) {
+            error_log("Phonebook empty - skipping write to file");
             return 1;
         }
+
+        // fritzbox phonebook
+        $xmlPhonebook = getPhonebook($contacts, $this->config);
 
         // write back saved attributes
         $xmlPhonebook = mergeAttributes($xmlPhonebook, $savedAttributes);
