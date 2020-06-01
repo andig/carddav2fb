@@ -467,17 +467,15 @@ EOT
  * @param array             $config
  * @return void
  */
-function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $config)
+function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $fritzbox, array $phonebook)
 {
-    $options = $config['fritzbox'];
-
-    $fritz = new Api($options['url']);
-    $fritz->setAuth($options['user'], $options['password']);
-    $fritz->mergeClientOptions($options['http'] ?? []);
+    $fritz = new Api($fritzbox['url']);
+    $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
+    $fritz->mergeClientOptions($fritzbox['http'] ?? []);
     $fritz->login();
 
     $formfields = [
-        'PhonebookId' => $config['phonebook']['id']
+        'PhonebookId' => $phonebook['id']
     ];
 
     $filefields = [

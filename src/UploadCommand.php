@@ -37,7 +37,7 @@ class UploadCommand extends Command
         }
 
         error_log("Uploading FRITZ!Box phonebook");
-        uploadPhonebook($xmlPhonebook, $this->config);
+        uploadPhonebook($xmlPhonebook, $this->config['fritzbox'], $this->config['phonebook']);
         error_log("Successful uploaded new FRITZ!Box phonebook");
 
         return 1;

@@ -90,7 +90,7 @@ class RunCommand extends Command
 
         // upload
         error_log("Uploading new phonebook to FRITZ!Box");
-        uploadPhonebook($xmlPhonebook, $this->config);
+        uploadPhonebook($xmlPhonebook, $this->config['fritzbox'], $this->config['phonebook']);
         error_log("Successful uploaded new FRITZ!Box phonebook");
 
         // uploading background image
