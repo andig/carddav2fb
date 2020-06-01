@@ -87,7 +87,7 @@ class RunCommand extends Command
         }
 
         // fritzbox phonebook
-        $xmlPhonebook = getPhonebook($contacts, $this->config);
+        $xmlPhonebook = contactsToFritzXML($contacts, $this->config);
 
         // write back saved attributes
         $xmlPhonebook = mergeAttributes($xmlPhonebook, $savedAttributes);

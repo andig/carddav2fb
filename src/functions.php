@@ -450,9 +450,9 @@ function convertVCards(array $cards, array $conversions): array
  *
  * @param SimpleXMLElement[] $contacts
  * @param array $conversions
- * @return SimpleXMLElement     the XML phone book in Fritz Box format
+ * @return SimpleXMLElement $xmlPhonebook
  */
-function getPhonebook(array $contacts, array $conversions): SimpleXMLElement
+function contactsToFritzXML(array $contacts, array $conversions): SimpleXMLElement
 {
     $xmlPhonebook = new SimpleXMLElement(
         <<<EOT
@@ -477,15 +477,14 @@ EOT
 /**
  * get secure access to FRITZ!Box router
  *
- * @param array $fritzbox credentials
+ * @param array $fritzConfig
  * @return Api $fritz
  */
-
-function getFritzBoxAccess($fritzbox)
+function getFritzBoxAccess(array $fritzConfig)
 {
-    $fritz = new Api($fritzbox['url']);
-    $fritz->setAuth($fritzbox['user'], $fritzbox['password']);
-    $fritz->mergeClientOptions($fritzbox['http'] ?? []);
+    $fritz = new Api($fritzConfig['url']);
+    $fritz->setAuth($fritzConfig['user'], $fritzConfig['password']);
+    $fritz->mergeClientOptions($fritzConfig['http'] ?? []);
     $fritz->login();
 
     return $fritz;
@@ -494,16 +493,17 @@ function getFritzBoxAccess($fritzbox)
 /**
  * Upload cards to fritzbox
  *
- * @param SimpleXMLElement  $xmlPhonebook
- * @param array             $config
+ * @param SimpleXMLElement $xmlPhonebook
+ * @param array $fritzConfig
+ * @param array $phonebookConfig
  * @return void
  */
-function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $fritzbox, array $phonebook)
+function uploadPhonebook(SimpleXMLElement $xmlPhonebook, array $fritzConfig, array $phonebookConfig)
 {
-    $fritz = getFritzBoxAccess($fritzbox);
+    $fritz = getFritzBoxAccess($fritzConfig);
 
     $formfields = [
-        'PhonebookId' => $phonebook['id']
+        'PhonebookId' => $phonebookConfig['id']
     ];
 
     $filefields = [
@@ -537,22 +537,22 @@ function uploadSuccessful(string $msg): bool
 /**
  * Downloads the phone book from Fritzbox
  *
- * @param   array $fritzbox
- * @param   array $phonebook
+ * @param array $fritzConfig
+ * @param array $phonebookConfig
  * @return  SimpleXMLElement|bool with the old existing phonebook
  */
-function downloadPhonebook(array $fritzbox, array $phonebook)
+function downloadPhonebook(array $fritzConfig, array $phonebookConfig)
 {
-    $fritz = getFritzBoxAccess($fritzbox);
+    $fritz = getFritzBoxAccess($fritzConfig);
 
     $formfields = [
-        'PhonebookId' => $phonebook['id'],
-        'PhonebookExportName' => $phonebook['name'],
+        'PhonebookId' => $phonebookConfig['id'],
+        'PhonebookExportName' => $phonebookConfig['name'],
         'PhonebookExport' => "",
     ];
     $result = $fritz->postFile($formfields, []); // send the command to load existing phone book
     if (substr($result, 0, 5) !== "<?xml") {
-        error_log("ERROR: Could not load phonebook with ID=".$phonebook['id']);
+        error_log("ERROR: Could not load phonebook with ID=".$phonebookConfig['id']);
         return false;
     }
     $xmlPhonebook = simplexml_load_string($result);

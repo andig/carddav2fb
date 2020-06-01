@@ -76,7 +76,7 @@ class ConvertCommand extends Command
         }
 
         // fritzbox phonebook
-        $xmlPhonebook = getPhonebook($contacts, $this->config);
+        $xmlPhonebook = contactsToFritzXML($contacts, $this->config);
 
         $filename = $input->getArgument('destination');
         if ($xmlPhonebook->asXML($filename)) {
