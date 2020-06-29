@@ -11,7 +11,7 @@
     "require": {
         "php": "^7.1",
         "symfony/console": "^4.3|^5.0",
-        "guzzlehttp/guzzle": "^6.0",
+        "guzzlehttp/guzzle": "^7.0",
         "ringcentral/psr7": "^1.2",
         "sabre/vobject": "^4.0"
     },
