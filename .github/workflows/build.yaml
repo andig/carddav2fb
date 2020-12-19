@@ -28,8 +28,8 @@ jobs:
           php-version: "${{ matrix.php-version }}"
 
       - name: Install dependencies
-        uses: php-actions/composer@dynamic-docker
-        # uses: ramsey/composer-install@v1
+        # uses: php-actions/composer@dynamic-docker
+        uses: ramsey/composer-install@v1
 
       - name: "Run PHPUnit"
         run: "vendor/bin/phpunit"
