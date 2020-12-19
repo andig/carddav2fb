@@ -9,7 +9,7 @@ class ConverterTest extends TestCase
     /** @var Converter */
     public $converter;
 
-    /** @var \stdClass */
+    /** @var \VObject\Component\VCard */
     public $contact;
 
     public function setUp(): void
