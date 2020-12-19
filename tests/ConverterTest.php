@@ -54,7 +54,7 @@ class ConverterTest extends TestCase
     public function testDefaultContact()
     {
         $res = $this->converter->convert($this->contact);
-        $this->assertInternalType('array', $res);
+        $this->assertIsArray($res);
         $this->assertCount(1, $res);
 
         $contact = $res[0];
