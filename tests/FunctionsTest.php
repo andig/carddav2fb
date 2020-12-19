@@ -8,7 +8,7 @@ class FunctionsTest extends TestCase
     /** @var \stdClass */
     public $contacts;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->contacts = $this->defaultContacts();
     }

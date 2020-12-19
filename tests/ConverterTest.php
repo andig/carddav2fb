@@ -12,7 +12,7 @@ class ConverterTest extends TestCase
     /** @var \stdClass */
     public $contact;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->converter = new Converter($this->defaultConfig());
         $this->contact = $this->defaultContact();

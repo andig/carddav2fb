@@ -8,7 +8,7 @@ class RestorerTest extends TestCase
     /** @var Restorer */
     public $restore;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->restore = new Restorer;
     }
