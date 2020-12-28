@@ -23,7 +23,7 @@ class RestorerTest extends TestCase
                     'CELL' => 'mobile',
                     'FAX' => 'fax_work',
                 ],
-                'defaultCountry' => 'DE'
+                'country' => 'DE'
             ],
         ];
     }

@@ -84,7 +84,7 @@ class Converter
 
         $numberUtil = PhoneNumberUtil::getInstance();
         try {
-            $countryCode = $this->config['defaultCountry'];
+            $countryCode = $this->config['country'];
             $parsedNumber = $numberUtil->parse($number, $countryCode);
             return $numberUtil->formatOutOfCountryCallingNumber($parsedNumber, $countryCode);
         } catch (NumberParseException $exception) {
