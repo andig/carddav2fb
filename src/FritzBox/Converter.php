@@ -3,6 +3,8 @@
 namespace Andig\FritzBox;
 
 use Andig;
+use libphonenumber\NumberParseException;
+use libphonenumber\PhoneNumberUtil;
 use \SimpleXMLElement;
 
 class Converter
@@ -79,13 +81,16 @@ class Converter
         if (filter_var($number, FILTER_VALIDATE_EMAIL) || substr($number, 0, 2) == '**') {
             return $number;
         }
-        if (count($this->config['phoneReplaceCharacters'])) {
-            $number = str_replace("\xc2\xa0", "\x20", $number);
-            $number = strtr($number, $this->config['phoneReplaceCharacters']);
-            $number = trim(preg_replace('/\s+/', ' ', $number));
-        }
 
-        return $number;
+        $numberUtil = PhoneNumberUtil::getInstance();
+        try {
+            $countryCode = $this->config['country'];
+            $parsedNumber = $numberUtil->parse($number, $countryCode);
+            return $numberUtil->formatOutOfCountryCallingNumber($parsedNumber, $countryCode);
+        } catch (NumberParseException $exception) {
+            // If parsing the phone number fails, it's probably garbage anyway. Just pass it on verbatim.
+            return $number;
+        }
     }
 
 

@@ -14,7 +14,8 @@
         "symfony/console": "^4.3|^5.0",
         "guzzlehttp/guzzle": "^7.0",
         "ringcentral/psr7": "^1.2",
-        "sabre/vobject": "^4.0"
+        "sabre/vobject": "^4.0",
+        "giggsey/libphonenumber-for-php": "^8.12"
     },
     "autoload": {
         "psr-4": {

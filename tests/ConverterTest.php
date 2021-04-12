@@ -28,14 +28,7 @@ class ConverterTest extends TestCase
                     'CELL' => 'mobile',
                     'FAX' => 'fax_work'
                 ],
-                'phoneReplaceCharacters' => [
-                    '+49' => '',
-                    '('   => '',
-                    ')'   => '',
-                    '/'   => '',
-                    '@'   => '',
-                    '-'   => ''
-                ],
+                'country' => 'DE',
                 'realName' => [],
             ],
         ];
@@ -211,24 +204,43 @@ class ConverterTest extends TestCase
         $this->assertEquals('other', (string)$numberType['type']);
     }
 
-    public function testPhonenumberConversionType()
+    public function testSipNumbersDoNotGetChanged()
+    {
+        $this->checkConversionResult('foo@sip.de', 'foo@sip.de');
+    }
+
+    public function testNationalNumbersGetNoCountryCode()
+    {
+        $this->checkConversionResult('+49(0511)12345/678-890', '0511 12345678890');
+    }
+
+    public function testInternationalNumbersGetCountryCode()
+    {
+        $this->checkConversionResult('+1234567890', '00 1 234567890');
+    }
+
+    public function testGarbageNumbersAreNotChanged()
+    {
+        $this->checkConversionResult('garbage', 'garbage');
+    }
+
+    public function testInteralNumbersAreNotChanged()
+    {
+        $this->checkConversionResult('**123', '**123');
+    }
+
+    private function checkConversionResult($number, $expectedResult)
     {
         unset($this->contact->TEL);
-        $this->contact->add('TEL', 'foo@sip.de', ['type' => 'work']);
-        $this->contact->add('TEL', '(0511)12345/678-890', ['type' => 'home']);
+        $this->contact->add('TEL', $number, ['type' => 'other']);
 
-        $res = $this->converter->convert($this->contact);
-        $this->assertCount(1, $res);
+        $result = $this->converter->convert($this->contact);
+        $this->assertCount(1, $result);
 
-        $contact = $res[0];
-        $this->assertCount(2, $contact->telephony->children());
+        $resultingContact = $result[0];
+        $this->assertCount(1, $resultingContact->telephony->children());
 
-        // no number conversion
-        $number = $contact->telephony->children()[0];
-        $this->assertEquals('foo@sip.de', (string)$number);
-
-        // number conversion
-        $number = $contact->telephony->children()[1];
-        $this->assertEquals('051112345678890', (string)$number);
+        $convertedNumber = (string)$resultingContact->telephony->children()[0];
+        $this->assertEquals($expectedResult, $convertedNumber);
     }
 }

@@ -65,6 +65,14 @@ $config = [
     ],
 
     'conversions' => [
+        /**
+         * Two-letter country code where this FRITZ!Box is located.
+         *
+         * Phone numbers from this country will be formatted as a national number (i.e. no country code)
+         * whereas numbers from other countries will use the international format appropriate for this country.
+         */
+        'country' => 'DE',
+
         'vip' => [
             'categories' => [
                 'VIP'
@@ -98,15 +106,5 @@ $config = [
             'WORK' => 'work',
             'HOME' => 'home'
         ],
-        /**
-         * 'phoneReplaceCharacters' conversions are processed consecutively. Order decides!
-         */
-        'phoneReplaceCharacters' => [
-            '+49' => '',  // router is usually operated in 'DE; '0049' could also be part of a phone number
-            '('   => '',
-            ')'   => '',
-            '/'   => '',
-            '-'   => ''
-        ]
     ]
 ];
