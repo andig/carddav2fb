@@ -314,14 +314,14 @@ function dissolveGroups(array $vcards): array
     // separate iCloud groups
     /** @var \stdClass $vcard */
     foreach ($vcards as $key => $vcard) {
-        if (isset($vcard->{'X-ADDRESSBOOKSERVER-KIND'})) {
-            if ($vcard->{'X-ADDRESSBOOKSERVER-KIND'} == 'group') {      // identifier
-                foreach ($vcard->{'X-ADDRESSBOOKSERVER-MEMBER'} as $member) {
-                    $member = str_replace(['urn:', 'uuid:'], ['', ''], (string)$member);
-                    $groups[(string)$vcard->FN][] = $member;
-                }
-                unset($vcards[$key]);                                   // delete this vCard
+        if (isset($vcard->{'X-ADDRESSBOOKSERVER-KIND'}) &&
+            $vcard->{'X-ADDRESSBOOKSERVER-KIND'} == 'group' &&
+            $vcard->{'X-ADDRESSBOOKSERVER-MEMBER'}) {
+            foreach ($vcard->{'X-ADDRESSBOOKSERVER-MEMBER'} as $member) {
+                $member = str_replace(['urn:', 'uuid:'], '', (string)$member);
+                $groups[(string)$vcard->FN][] = $member;
             }
+            unset($vcards[$key]);                               // delete this vCard
         }
     }
 
