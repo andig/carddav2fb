@@ -100,12 +100,23 @@ class Restorer
     {
         $contact = new SimpleXMLElement('<contact />');
         $contact->addChild('carddav_uid', $uid);
-        $telephony = $contact->addChild('telephony');
-        $number = $telephony->addChild('number', $internalNumber['number']);
-        $number->addAttribute('id', $internalNumber['id']);
-        $number->addAttribute('type', $internalNumber['type']);
+        $contact->addChild('category', '0');
         $person = $contact->addChild('person');
         $person->addChild('realName', $internalNumber['name']);
+
+        $telephony = $contact->addChild('telephony');
+        $number = $telephony->addChild('number', $internalNumber['number']);
+        $number->addAttribute('type', $internalNumber['type']);
+        $number->addAttribute('prio', '0');
+        $number->addAttribute('id', $internalNumber['id']);
+
+        $contact->addChild('services');
+
+        $contact->addChild('setup');
+        $features = $contact->addChild('features');
+        $features->addAttribute('doorphone', '0');
+        $contact->addChild('mod_time', (string)time());
+        $contact->addChild('uniqueid');
 
         return $contact;
     }
