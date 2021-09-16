@@ -23,14 +23,7 @@ class RestorerTest extends TestCase
                     'CELL' => 'mobile',
                     'FAX' => 'fax_work',
                 ],
-                'phoneReplaceCharacters' => [
-                    '+49' => '',
-                    '('   => '',
-                    ')'   => '',
-                    '@'   => '',
-                    '/'   => '',
-                    '-'   => '',
-                ],
+                'country' => 'DE'
             ],
         ];
     }
