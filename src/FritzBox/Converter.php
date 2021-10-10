@@ -181,8 +181,6 @@ class Converter
             $number = $this->convertPhonenumber($number);
             // get types
             $telTypes = strtoupper($card->TEL[$key]['TYPE'] ?? '');
-            // get possible wildcard numbers
-            $wildcardNumber = $this->getWildcardNumber($card->ORG, $number, $telTypes);
 
             $type = 'other';                                    // default
             foreach ($phoneTypes as $phoneType => $value) {
@@ -200,6 +198,8 @@ class Converter
             ];
             $phoneNumbers[] = $addNumber;
 
+            // get possible wildcard numbers
+            $wildcardNumber = $this->getWildcardNumber($card->ORG, $number, $telTypes);
             !count($wildcardNumber) ?: $wildcardNumbers[] = $wildcardNumber;
         }
 
