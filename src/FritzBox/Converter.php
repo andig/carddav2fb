@@ -173,6 +173,7 @@ class Converter
         }
 
         $phoneNumbers = [];
+        $wildcardNumbers = [];
         $phoneTypes = $this->config['phoneTypes'] ?? [];
         foreach ($card->TEL as $key => $number) {
             $wildcardNumber = [];
@@ -180,6 +181,7 @@ class Converter
             $number = $this->convertPhonenumber($number);
             // get types
             $telTypes = strtoupper($card->TEL[$key]['TYPE'] ?? '');
+            // get possible wildcard numbers
             $wildcardNumber = $this->getWildcardNumber($card->ORG, $number, $telTypes);
 
             $type = 'other';                                    // default
@@ -197,9 +199,8 @@ class Converter
                 'number' => (string)$number,
             ];
             $phoneNumbers[] = $addNumber;
-            if (count($wildcardNumber)) {
-                $phoneNumbers[] = $wildcardNumber;
-            }
+
+            !count($wildcardNumber) ?: $wildcardNumbers[] = $wildcardNumber;
         }
 
         // sort phone numbers
@@ -215,7 +216,7 @@ class Converter
             });
         }
 
-        return $phoneNumbers;
+        return count($wildcardNumbers) ? array_merge($phoneNumbers, $wildcardNumbers) : $phoneNumbers;
     }
 
     /**
