@@ -87,6 +87,8 @@ $config = [
         /**
          * 'phoneTypes':
          * The order of the target values (first occurrence) determines the sorting of the telephone numbers
+         * FRITZ!Box knows five types: 'home', 'mobile', 'work', 'fax_work' and 'other'
+         * If you want to exclude a phonetypes, leave the target format blank (e.g.: 'CELL' => '')
          */
         'phoneTypes' => [
             'WORK' => 'work',
@@ -99,7 +101,7 @@ $config = [
             'HOME' => 'home'
         ],
         /**
-         * 'phoneReplaceCharacters' conversions are processed consecutively. Order decides!
+         * 'phoneReplaceCharacters' conversions are processed length descending!
          */
         'phoneReplaceCharacters' => [
             '+49' => '',  // router is usually operated in 'DE; '0049' could also be part of a phone number

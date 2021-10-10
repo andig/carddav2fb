@@ -186,6 +186,9 @@ class Converter
                     break;
                 }
             }
+            if (empty($type)) {
+                continue;
+            }
             if (strpos($telTypes, 'FAX') !== false) {
                 $type = 'fax_work';
             }
