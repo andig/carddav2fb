@@ -325,7 +325,7 @@ class Converter
             && strpos($types, 'PREF') !== false)  {
             return [
                 'type'   => 'work',
-                'number' => rtrim($number, '0') . '*',
+                'number' => substr($number, 0, -1) . '*',
             ];
         }
 
