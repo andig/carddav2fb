@@ -182,7 +182,7 @@ EOD;
 
         $cards = [];
         $body = $this->stripNamespaces((string)$response->getBody());
-        $xml = new \SimpleXMLElement($body);
+        $xml = new \SimpleXMLElement($body, LIBXML_PARSEHUGE);
         // NOTE: instead of stripping the namespaces they could also be queried using xpath:
         // $xml->registerXPathNamespace('dav', 'DAV:');
         // $xml->registerXPathNamespace('card', 'urn:ietf:params:xml:ns:carddav');
