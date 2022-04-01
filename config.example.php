@@ -99,7 +99,7 @@ $config = [
             'HOME' => 'home'
         ],
         /**
-         * 'phoneReplaceCharacters' conversions are processed consecutively. Order decides!
+         * 'phoneReplaceCharacters' conversions are processed length descending!
          */
         'phoneReplaceCharacters' => [
             '+49' => '',  // router is usually operated in 'DE; '0049' could also be part of a phone number
