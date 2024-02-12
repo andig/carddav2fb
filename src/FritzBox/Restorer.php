@@ -3,17 +3,18 @@
 namespace Andig\FritzBox;
 
 use Andig\FritzBox\Converter;
-use Sabre\VObject\Document;
 use \SimpleXMLElement;
 
 /**
- * Copyright (c) 2019 Volker Püschel
+ * @author Volker Püschel <knuffy@anasco.de>
+ * @copyright 2024 Volker Püschel
  * @license MIT
  */
 
 class Restorer
 {
     const CSV_HEADER = 'uid,number,id,type,quickdial,vanity,prio,name';
+    const AVM_ATTRIBUTES = ['quickdial', 'vanity'];
 
     private $collums = [];
 
@@ -37,7 +38,7 @@ class Restorer
     private function getPlainArray()
     {
         $csvHeader = explode(',', self::CSV_HEADER);
-        $dump = array_shift($csvHeader);            // eliminate the first column header (uid)
+        $dump = array_shift($csvHeader);    // eliminate the first column header (uid)
 
         return array_fill_keys($csvHeader, '');
     }
@@ -72,7 +73,7 @@ class Restorer
             if (strpos($number, '@hd-telefonie.avm.de')) {
                 continue;
             }
-            $attributes = $this->getPlainArray();                   // it´s easier to handle with the full set
+            $attributes = $this->getPlainArray();   // it´s easier to handle with the full set
             // regardless of how the number was previously converted, the current config is applied here
             $attributes['number'] = $converter->convertPhonenumber((string)$number);
             // get all phone number attibutes
@@ -90,20 +91,34 @@ class Restorer
     }
 
     /**
-     * get a xml contact structure from saved internal numbers
+     * set new contact phone number
+     * 
+     * @param object $telephony
+     * @param array $internalNumber
+     * @return object $number
+     */
+    private function setInternalContactNumber(object $telephony, array $internalNumber)
+    {
+        $number = $telephony->addChild('number', $internalNumber['number']);
+        $number->addAttribute('id', $internalNumber['id']);
+        $number->addAttribute('type', $internalNumber['type']);
+
+        return $number;
+    }
+
+    /**
+     * set a xml contact structure from saved internal numbers
      *
      * @param string $uid
      * @param array $internalNumber
      * @return SimpleXMLElement $contact
      */
-    private function getInternalContact(string $uid, array $internalNumber)
+    private function setNewInternalContact(string $uid, array $internalNumber)
     {
         $contact = new SimpleXMLElement('<contact />');
         $contact->addChild('carddav_uid', $uid);
         $telephony = $contact->addChild('telephony');
-        $number = $telephony->addChild('number', $internalNumber['number']);
-        $number->addAttribute('id', $internalNumber['id']);
-        $number->addAttribute('type', $internalNumber['type']);
+        $this->setInternalContactNumber($telephony, $internalNumber);
         $person = $contact->addChild('person');
         $person->addChild('realName', $internalNumber['name']);
 
@@ -139,18 +154,23 @@ class Restorer
 
         error_log('Restoring saved attributes (quickdial, vanity) and internal numbers');
         foreach ($attributes as $key => $values) {
-            if (substr($values['number'], 0, 2) == '**') {      // internal number
-                $contact = $this->getInternalContact($key, $values);
-                $this->xml_adopt($root, $contact);              // add contact with internal number
-            }
             if ($contact = $xmlTargetPhoneBook->xpath(sprintf('//contact[carddav_uid = "%s"]', $key))) {
                 if ($phone = $contact[0]->xpath(sprintf("telephony/number[text() = '%s']", $values['number']))) {
-                    foreach (['quickdial', 'vanity'] as $attribute) {
+                    foreach (self::AVM_ATTRIBUTES as $attribute) {
                         if (!empty($values[$attribute])) {
                             $phone[0]->addAttribute($attribute, $values[$attribute]);
                         }
                     }
                 }
+                if (substr($values['number'], 0, 2) == '**') {  // internal number
+                    $number = $this->setInternalContactNumber($contact[0], $values);
+                    $this->xml_adopt($contact[0]->telephony, $number);
+                }    
+            } else {
+                if (substr($values['number'], 0, 2) == '**') {  // internal number
+                    $contact = $this->setNewInternalContact($key, $values);
+                    $this->xml_adopt($root, $contact);  // add contact with internal number
+                }    
             }
         }
 
@@ -158,21 +178,22 @@ class Restorer
     }
 
     /**
-     * convert internal phonbook data (array of SimpleXMLElement) to string (rows of csv)
+     * convert internal phonbook data (array of SimpleXMLElement) to string
+     * (rows of csv)
      *
      * @param array $phonebookData
      * @return string $row csv
      */
     public function phonebookDataToCSV($phonebookData)
     {
-        $row = self::CSV_HEADER . PHP_EOL;                            // csv header row
+        $row = self::CSV_HEADER . PHP_EOL;                  // csv header row
         foreach ($phonebookData as $uid => $values) {
-            $row .= $uid;                                 // array key first collum
+            $row .= $uid;                           // array key first collum
             foreach ($values as $key => $value) {
                 if ($key == 'name') {
                     $value = '"' . $value . '"';
                 }
-                $row .= ',' . $value;                           // values => collums
+                $row .= ',' . $value;                       // values => collums
             }
             if (next($phonebookData) == true) {
                 $row .= PHP_EOL;
@@ -190,14 +211,13 @@ class Restorer
      */
     public function csvToPhonebookData($csvRow)
     {
-        $rows = '';
         $uid = '';
         $phonebookData = [];
 
         if (count($csvRow) <> count($this->collums)) {
             throw new \Exception('The number of csv columns does not match the default!');
         }
-        if ($csvRow <> $this->collums) {                    // values equal CSV_HEADER
+        if ($csvRow <> $this->collums) {            // values equal CSV_HEADER
             foreach ($csvRow as $key => $value) {
                 if ($key == 0) {
                     $uid = $value;
