@@ -28,6 +28,7 @@ RUN mkdir -p /data && \
     cd /srv && \
     composer install --no-dev && \
     chmod +x /srv/carddav2fb /srv/docker-entrypoint && \
+    ln -s /data/generated-phonebook.xml . && \
     ln -s /data/config.php .
 
 ENTRYPOINT [ "/srv/docker-entrypoint" ]

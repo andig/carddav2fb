@@ -421,6 +421,10 @@ function filtersMatch(Document $vcard, array $filters): bool
             if (array_intersect($vcard->$param->getParts(), $values)) {
                 return true;
             }
+        } else {
+            if (in_array('', $values)) {
+                return true;
+            }
         }
     }
 

@@ -92,6 +92,9 @@ class RunCommand extends Command
         // write back saved attributes
         $xmlPhonebook = mergeAttributes($xmlPhonebook, $savedAttributes);
 
+        // save to local file
+        $xmlPhonebook->asXML("generated-phonebook.xml");
+
         // upload
         error_log("Uploading new phonebook to FRITZ!Box");
         uploadPhonebook($xmlPhonebook, $this->config['fritzbox'], $this->config['phonebook']);
