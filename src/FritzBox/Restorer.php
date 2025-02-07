@@ -7,7 +7,7 @@ use \SimpleXMLElement;
 
 /**
  * @author Volker Püschel <knuffy@anasco.de>
- * @copyright 2024 Volker Püschel
+ * @copyright 2025 Volker Püschel
  * @license MIT
  */
 

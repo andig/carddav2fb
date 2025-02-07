@@ -118,4 +118,4 @@ This script is released under Public Domain, some parts under GNU AGPL or MIT li
 
 ## Authors
 
-Copyright (c) 2012-2022 Andreas Götz, Volker Püschel, Karl Glatz, Christian Putzke, Martin Rost, Jens Maus, Johannes Freiburger
+Copyright (c) 2012-2025 Andreas Götz, Volker Püschel, Karl Glatz, Christian Putzke, Martin Rost, Jens Maus, Johannes Freiburger

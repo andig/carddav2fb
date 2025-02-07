@@ -8,6 +8,7 @@ use Sabre\VObject\Splitter\VCard;
 
 /**
  * @author Volker Püschel <knuffy@anasco.de>
+ * @copyright 2025 Volker Püschel
  * @license MIT
  */
 
