@@ -5,3 +5,12 @@
 php-cs-fixer.config
 config.cron
 cache
+/carddav2fb.wiki
+/workbench/google.php
+/workbench/liz.php
+/workbench/request_b.php
+/workbench/request_m.php
+/workbench/t-online.php
+/workbench/test.php
+/workbench/test1.php
+/workbench/wolf_cfg.php

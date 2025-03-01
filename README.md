@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/andig/carddav2fb.svg?branch=master)](https://travis-ci.org/andig/carddav2fb) [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BB3W3WH7GVSNW)
 
-This is a completely revised version of https://github.com/jens-maus/carddav2fb.
+This is a completely revised version of [https://github.com/jens-maus/carddav2fb][descent].
 
 ## Features
 
@@ -20,9 +20,9 @@ This is a completely revised version of https://github.com/jens-maus/carddav2fb.
 
 ## Requirements
 
-* PHP >7.3 or 8.0 (`apt-get install php php-curl php-mbstring php-xml`)
-* Composer (follow the installation guide at https://getcomposer.org/download/)
-
+* PHP 8.2 or higher (`apt-get install php php-curl php-mbstring php-xml`)
+* [Composer][composer]
+  
 ## Installation
 
 Install requirements
@@ -37,19 +37,19 @@ edit `config.example.php` and save as `config.php`
 
 ## Usage
 
-### List all commands:
+### List all commands
 
 ```console
 ./carddav2fb list
 ```
 
-### Complete processing:
+### Complete processing
 
 ```console
 ./carddav2fb run
 ```
 
-### Get help for a command:
+### Get help for a command
 
 ```console
 ./carddav2fb run -h
@@ -119,3 +119,6 @@ This script is released under Public Domain, some parts under GNU AGPL or MIT li
 ## Authors
 
 Copyright (c) 2012-2025 Andreas Götz, Volker Püschel, Karl Glatz, Christian Putzke, Martin Rost, Jens Maus, Johannes Freiburger
+
+[composer]: https://getcomposer.org/download/
+[descent]: https://github.com/jens-maus/carddav2fb
