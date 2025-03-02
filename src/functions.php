@@ -45,7 +45,7 @@ function localProvider($fullpath)
  * @param callable $callback
  * @return Document[]
  */
-function download(Backend $backend, callable $callback=null): array
+function download(Backend $backend, callable $callback): array
 {
     $backend->setProgress($callback);
     return $backend->getVcards();
@@ -207,7 +207,7 @@ function getJPEGimage($vcard)
  * @param callable $callback
  * @return mixed false or [number of uploaded images, number of total found images]
  */
-function uploadImages(array $vcards, array $config, array $phonebook, callable $callback=null)
+function uploadImages(array $vcards, array $config, array $phonebook, callable $callback)
 {
     $countUploadedImages = 0;
     $countAllImages = 0;

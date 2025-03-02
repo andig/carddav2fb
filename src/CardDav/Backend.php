@@ -60,9 +60,9 @@ class Backend
      * Constructor
      * Sets the CardDAV server url
      *
-     * @param   string  $url    CardDAV server url
+     * @param string $url CardDAV server url
      */
-    public function __construct(string $url = null, $method = 'REPORT')
+    public function __construct(string $url, $method = 'REPORT')
     {
         if ($url) {
             $this->setUrl($url);
@@ -78,7 +78,7 @@ class Backend
     /**
      * Set the properties/elements to be substituted
      *
-     * @param   array $elements        the properties whose value should be replaced ('LOGO', 'KEY', 'PHOTO' or 'SOUND')
+     * @param array $elements the properties whose value should be replaced ('LOGO', 'KEY', 'PHOTO' or 'SOUND')
      */
     public function setSubstitutes($elements)
     {
@@ -106,7 +106,7 @@ class Backend
     /**
      * Set progress callback
      */
-    public function setProgress(callable $callback=null)
+    public function setProgress(callable $callback)
     {
         $this->callback = $callback;
     }
@@ -210,18 +210,18 @@ EOD;
      * If elements are declared as to be substituted,
      * the data from possibly linked sources are embedded directly into the vCard
      *
-     * @param   Document $vcard single parsed vCard
-     * @param   string $property the property whose value is to be replaced ('LOGO', 'KEY', 'PHOTO' or 'SOUND')
-     * @return  Document single vCard with embedded value
+     * @param Document $vcard single parsed vCard
+     * @param string $property the property whose value is to be replaced ('LOGO', 'KEY', 'PHOTO' or 'SOUND')
+     * @return Document single vCard with embedded value
      */
     private function embedBase64(Document $vcard, string $property): Document
     {
         if ($embedded = $this->getLinkedData($vcard->$property)) {      // get the data from the external URL or false
-            if ($vcard->VERSION == '3.0') {                             // the different vCard versions must be considered
-                unset($vcard->$property);                               // delete the old property
+            if ($vcard->VERSION == '3.0') { // the different vCard versions must be considered
+                unset($vcard->$property);           // delete the old property
                 $vcard->add($property, $embedded['data'], ['TYPE' => strtoupper($embedded['subtype']), 'ENCODING' => 'b']);
             } elseif ($vcard->VERSION == '4.0') {
-                unset($vcard->$property);                               // delete the old property
+                unset($vcard->$property);           // delete the old property
                 $vcard->add($property, 'data:' . $embedded['mimetype'] . ';base64,' . base64_encode($embedded['data']));
             }
         }
@@ -230,10 +230,11 @@ EOD;
     }
 
     /**
-     * Delivers an array including the previously linked data and its mime type details
-     * a mime type is composed of a type, a subtype, and optional parameters (e.g. "; charset=UTF-8")
+     * Delivers an array including the previously linked data and its mime type
+     * details. A mime type is composed of a type, a subtype, and optional 
+     * parameters (e.g. "; charset=UTF-8")
      *
-     * @param string $uri           URL of the external linked data
+     * @param string $uri URL of the external linked data
      * @return bool|array ['mimetype',    e.g. "image/jpeg"
      *                     'type',        e.g. "audio"
      *                     'subtype',     e.g. "mpeg"
@@ -246,12 +247,9 @@ EOD;
         if ($response->getStatusCode() != 200) {
             return false;
         }
-
         $contentType = $response->getHeader('Content-Type');
-
         @list($mimeType, $parameters) = explode(';', $contentType[0], 2);
         @list($type, $subType) = explode('/', $mimeType);
-
         $externalData = [
             'mimetype'   => $mimeType ?? '',
             'type'       => $type ?? '',
@@ -267,28 +265,28 @@ EOD;
      * enrich the vcard with
      * ->FULLNAME (equal to ->FN)
      * ->LASTNAME, ->FIRSTNAME etc. extracted from ->N
-     * ->PHOTO with embedded data from linked sources (equal for KEY, LOGO or SOUND)
+     * ->PHOTO with embedded data from linked sources (equal for KEY, LOGO or
+     *   SOUND)
      *
      * @param Document $vcard
      * @return Document
      */
     public function enrichVcard(Document $vcard): Document
     {
-        if (isset($vcard->{'X-ADDRESSBOOKSERVER-KIND'}) && $vcard->{'X-ADDRESSBOOKSERVER-KIND'} == 'group') {
+        if (isset($vcard->{'X-ADDRESSBOOKSERVER-KIND'}) &&
+            $vcard->{'X-ADDRESSBOOKSERVER-KIND'} == 'group') {
             return $vcard;
         }
-
-        if (isset($vcard->FN)) {                                // redundant for downward compatibility
+        if (isset($vcard->FN)) {        // redundant for downward compatibility
             $vcard->FULLNAME = (string)$vcard->FN;
         }
-        if (isset($vcard->N)) {                                 // add 'N'-values to additional separate fields
+        if (isset($vcard->N)) { // add 'N'-values to additional separate fields
             foreach ($this->parseName($vcard->N) as $key => $value) {
                 if (!empty($value)) {
                     $vcard->$key = $value;
                 }
             }
         }
-
         foreach (['PHOTO', 'LOGO', 'SOUND', 'KEY'] as $property) {      // replace of linked data by embedded
             if (!isset($vcard->$property)) {
                 continue;
@@ -305,8 +303,8 @@ EOD;
      * Cleans CardDAV XML response
      * https://stackoverflow.com/questions/1245902/remove-namespace-from-xml-using-php
      *
-     * @param   string  $xml   CardDAV XML response
-     * @return  string         Cleaned CardDAV XML response
+     * @param string $xml CardDAV XML response
+     * @return string     Cleaned CardDAV XML response
      */
     private function stripNamespaces($xml)
     {
