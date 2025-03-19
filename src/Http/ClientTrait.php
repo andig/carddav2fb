@@ -74,6 +74,14 @@ trait ClientTrait
         if ($this->username) {
             $method = $this->clientOptions['auth'] ?? 'basic';
             $options['auth'] = [$this->username, $this->password, $method];
+
+            if (extension_loaded("curl") ){
+                $options['curl'] = [
+                    CURLOPT_HTTPAUTH => CURLAUTH_ANY,
+                    CURLOPT_USERNAME => $this->username,
+                    CURLOPT_PASSWORD => $this->password,
+                ];
+            }
         } else {
             unset($options['auth']);
         }
