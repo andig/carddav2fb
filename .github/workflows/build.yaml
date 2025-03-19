@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  build:
+    name: Build
+    runs-on: "ubuntu-18.04"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+        - "7.4"
+        - "8.0"
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v2"
+        with:
+          fetch-depth: 0
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "${{ matrix.php-version }}"
+
+      - name: Install dependencies
+        # uses: php-actions/composer@dynamic-docker
+        uses: ramsey/composer-install@v1
+
+      - name: "Run PHPUnit"
+        run: "vendor/bin/phpunit"
