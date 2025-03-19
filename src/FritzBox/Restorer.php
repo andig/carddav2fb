@@ -102,6 +102,11 @@ class Restorer
         $number = $telephony->addChild('number', $internalNumber['number']);
         $number->addAttribute('id', $internalNumber['id']);
         $number->addAttribute('type', $internalNumber['type']);
+        foreach (self::AVM_ATTRIBUTES as $attribute) {
+            if (!empty($internalNumber[$attribute])) {
+                $number->addAttribute($attribute, $internalNumber[$attribute]);
+            }
+        }
 
         return $number;
     }
